@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>Realistic Water Simulation with Spray, Foam, and Bubbles</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">Realistic Water Simulation with Spray, Foam, and Bubbles</h1>
+<h2 align="middle">CS 184 Final Project Proposal</h2>
+<h2 align="middle">Calvin Pham, Fourth Teerakapibal, Joshua Chen, Marcus Lee</h2>
+
+<br><br>
+
+
+<h2 align="middle">Summary</h2>
+<p>We want to realistically simulate water in a way that shows how it moves and interacts within a set environment. We also want the water to have spray, foam, and bubbles that would be created when air gets mixed in with the water.</p>
+
+<h2 align="middle">Problem Description</h2>
+<p>Many water simulations do not include the interactions with air, which results in water that does not quite resemble what real-life splashing water would look like. We want to tackle the problem of making water simulation more realistic by including these water-air interactions. A more realistic simulation allows for scenes such as the ocean or waterfall that look more realistic.</p>
+<p>This is challenging because simulating water-air interaction introduces more variables/equations to consider and an extra layer of complexity. We are going to solve this problem by making assumptions that approximate the physical interactions between water and air without needing to simulate air.</p>
+<div align="middle">
+  <img src="no-bubbles.JPG" align="middle" width="400px"/>
+  <figcaption align="middle">A simulation with no water-air interaction</figcaption>
+  <img src="with-bubbles.jpeg" align="middle" width="400px"/>
+  <figcaption align="middle">A real-world photo</figcaption>
+</div>
+
+<h2 align="middle">Goals and Deliverables</h2>
+<p>To measure the accuracy and quality of our result, we will qualitatively compare our final simulation results against benchmark simulations (without water-air interaction) along with reference images/videos of real water-air interactions.</p>
+<div align="middle">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/snoaudmDTfU" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <figcaption align="middle">A simulation with no water-air interaction</figcaption>
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/tj2e1tfEcjI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <figcaption align="middle">A simulation with water-air interaction</figcaption>
+</div>
+
+<p>We plan to deliver multiple videos of realistic water simulations with water-air simulations.</p>
+<p>We hope to deliver realistic water-air simulations that interact with moving physical objects.</p>
+
+
+<h2 align="middle">Schedule</h2>
+
+  <li> Week 1 </li>
+    <ul>
+      <li> Research / Reading papers on how to create the water simulation including rendering software and fluid mechanics</li>
+      <li> Look into water interaction with physical objects and how to implement it</li>
+      <li> Build / Setup the initial codebase for the project </li>
+    </ul>
+
+  <li> Week 2 </li>
+    <ul>
+      <li>Build the water simulation and get some sample renders</li>
+    </ul>  
+    
+    <li> Week 3 </li>
+    <ul>
+      <li>Adding water-air interactions into the water simulation</li>
+    </ul>
+    
+  <li> Week 4 </li>
+    <ul>
+      <li>Add in physical object interactions if time permits</li>
+      <li>Create final presentation, report, webpage, and video</li>
+      <li>Create the final renderings</li>
+    </ul>
+
+
+<h2 align="middle">Resources</h2>
+<p>Computing platform/hardware: personal computers</p>
+<p>Render software: Mitsuba/Blender</p>
+
+<h3 align="middle">Papers</h3>
+<p><a href="http://mmacklin.com/pbf_sig_preprint.pdf">Position Based Fluids</a></p>
+
+<p><a href="https://faculty.cc.gatech.edu/~turk/my_papers/sph_surfaces.pdf">Reconstructing Surfaces of Particle-Based Fluids Using Anisotropic Kernels</a></p>
+
+<p><a href="https://cg.informatik.uni-freiburg.de/publications/2012_CGI_sprayFoamBubbles.pdf">Unified Spray, Foam and Bubbles for Particle-Based Fluids</a></p>
+
+</body>
+</html>
