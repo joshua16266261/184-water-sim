@@ -29,7 +29,6 @@ void Fluid::buildGrid() {
     // Fill the rectangular prism with particles
     // Depth major order -> row major order
 	float x, y, z;
-	
     for (int depth = 0; depth < num_height_particles; depth++) {
         z = depth * height / (num_height_particles - 1);
         for (int row = 0; row < num_width_particles; row++) {
@@ -37,7 +36,7 @@ void Fluid::buildGrid() {
 		    for (int col = 0; col < num_length_particles; col++) {
                 x = col * length / (num_length_particles - 1);
                 particles.emplace_back(Particle(Vector3D(x, y, z)));
-            }    
+            }
 		}
 	}
 }
@@ -67,9 +66,9 @@ void Fluid::simulate(FluidParameters *fp,
 
     // Find neighboring particles
     for (auto p = begin(particles); p != end(particles); p++) {
-        Vector3D key = hash_position(p->position);
+        Vector3D key = hash_position(p->position, fp->h);
         Vector3D neighbor_key = Vector3D();
-        *(p->neighbors).clear();
+        (p->neighbors)->clear();
 		
         for (int i = -1; i < 2; i++) {
             for (int j = -1; j < 2; j++) {
@@ -93,7 +92,7 @@ void Fluid::simulate(FluidParameters *fp,
 			// Calculate lambda_i (line 13 of Algorithm 1)
 			float rho_i = 0;
 			for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
-				rho_i += pow(pow(fp->h, 2) - (p->position - q->position).norm2(), 3);
+				rho_i += pow(pow(fp->h, 2) - (p->position - (*q)->position).norm2(), 3);
 				// TODO
 			}
 			rho_i *= mass * 315.0 / (64 * PI * pow(fp->h, 9));
@@ -162,7 +161,7 @@ void Fluid::build_spatial_map(float h) {
 
     // Build a spatial map out of all of the particles
 	for (auto p = begin(particles); p != end(particles); p++) {
-		float key = hash_position(p->position, h);
+		Vector3D key = hash_position(p->position, h);
 		if (map.count(key) > 0) {
 			map[key]->emplace_back(&*p);
 		} else {
@@ -181,3 +180,8 @@ Vector3D Fluid::hash_position(Vector3D pos, float h) {
 	
 	return Vector3D(x_box, y_box, z_box);
 }
+
+
+
+
+

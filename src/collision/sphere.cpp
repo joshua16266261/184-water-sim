@@ -14,5 +14,5 @@ void Sphere::collide(Particle &p) {
 		Vector3D corr = path - p.last_position;
 		p.position = p.last_position + (1 - friction) * corr;
     }
-}}
+}
 

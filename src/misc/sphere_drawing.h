@@ -12,6 +12,7 @@ class SphereMesh {
 public:
   // Supply the desired number of vertices
   SphereMesh(int num_lat = 40, int num_lon = 40);
+};
 
 
 }; // namespace Misc
