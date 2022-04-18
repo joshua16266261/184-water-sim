@@ -23,14 +23,17 @@ struct FluidParameters {
     c is some constant used in applying XSPH viscosity (see page 3 of Macklin and Muller)
     total_time is the number of seconds that this simulation will run for
     fps is the number of frames per second
+    h is the max distance that 2 particles can be considered neighbors
   */
-  FluidParameters( double density, double relaxation, Vector3D delta_q, float k = 0.1, float n = 4, float c = 0.01, float total_time, int fps)
-      : density(density), relaxation(relaxation), delta_q(delta_q), k(k), n(n), c(c), total_time(total_time), fps(fps) {}
+  FluidParameters( double density, double relaxation, Vector3D delta_q, float k = 0.1, float n = 4, float c = 0.01, float total_time, int fps, int solverIters, float h)
+      : density(density), relaxation(relaxation), delta_q(delta_q), k(k), n(n), c(c), total_time(total_time), fps(fps), solverIters(solverIters), h(h) {}
   ~FluidParameters() {}
 
   // Simulation parameters
     float total_time;
     int fps;
+    int solverIters;
+    float h;
 
   // Fluid parameters
   double density;
@@ -52,9 +55,8 @@ struct Fluid {
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects);
 
-  void build_spatial_map();
-  void self_collide(Particle &p, double simulation_steps);
-  float hash_position(Vector3D pos);
+  void build_spatial_map(float h);
+  Vector3D hash_position(Vector3D pos, float h);
 
   // Fluid properties
   double length;
@@ -68,7 +70,7 @@ struct Fluid {
   vector<Particle> particles;
 
   // Spatial hashing
-  unordered_map<float, vector<Particle *> *> map;
+  unordered_map<Vector3D, vector<Particle *> *> map;
 };
 
 #endif /* FLUID_H */
