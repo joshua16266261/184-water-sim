@@ -2,19 +2,33 @@ cmake_minimum_required(VERSION 2.8)
 
 # Cloth simulation source
 set(CLOTHSIM_VIEWER_SOURCE
+    # Fluid
     fluid.cpp
+    fluid.h
+    particle.h
+
+    # Cloth simulation objects
+    cloth.cpp
+    clothMesh.cpp
 
     # Collision objects
     collision/sphere.cpp
     collision/plane.cpp
 
-    #Header Files
-    fluid.h
-    particle.h
+    # Application
+    main.cpp
+    clothSimulator.cpp
 
+    # Miscellaneous
+    # png.cpp
+    misc/sphere_drawing.cpp
+    misc/file_utils.cpp
+
+    # Camera
+    camera.cpp
 )
 
-#Windows-only sources
+# Windows-only sources
 if(WIN32)
 list(APPEND CLOTHSIM_VIEWER_SOURCE
     # For get-opt
@@ -35,15 +49,15 @@ endif(WIN32)
 #-------------------------------------------------------------------------------
 # Set definitions
 #-------------------------------------------------------------------------------
-# add_definitions(${NANOGUI_EXTRA_DEFS})
+add_definitions(${NANOGUI_EXTRA_DEFS})
 
 #-------------------------------------------------------------------------------
 # Set include directories
 #-------------------------------------------------------------------------------
 include_directories(
   ${CGL_INCLUDE_DIRS}
-  # ${FREETYPE_INCLUDE_DIRS}
-  # ${NANOGUI_EXTRA_INCS}
+  ${FREETYPE_INCLUDE_DIRS}
+  ${NANOGUI_EXTRA_INCS}
 )
 
 #-------------------------------------------------------------------------------
@@ -51,7 +65,7 @@ include_directories(
 #-------------------------------------------------------------------------------
 link_directories(
   ${CGL_LIBRARY_DIRS}
-  # ${FREETYPE_LIBRARY_DIRS}
+  ${FREETYPE_LIBRARY_DIRS}
 )
 
 #-------------------------------------------------------------------------------
@@ -61,8 +75,8 @@ add_executable(clothsim ${CLOTHSIM_VIEWER_SOURCE})
 
 target_link_libraries(clothsim
     CGL ${CGL_LIBRARIES}
-    # nanogui ${NANOGUI_EXTRA_LIBS}
-    # ${FREETYPE_LIBRARIES}
+    nanogui ${NANOGUI_EXTRA_LIBS}
+    ${FREETYPE_LIBRARIES}
     ${CMAKE_THREADS_INIT}
 )
 
