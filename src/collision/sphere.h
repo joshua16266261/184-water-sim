@@ -1,7 +1,7 @@
 #ifndef COLLISIONOBJECT_SPHERE_H
 #define COLLISIONOBJECT_SPHERE_H
 
-#include "../fluid.h"
+#include "../clothMesh.h"
 #include "../misc/sphere_drawing.h"
 #include "collisionObject.h"
 

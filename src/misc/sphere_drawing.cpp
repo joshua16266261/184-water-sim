@@ -1,4 +1,5 @@
 #include <cmath>
+#include <nanogui/nanogui.h>
 
 #include "sphere_drawing.h"
 
@@ -10,6 +11,8 @@
 #define VERTEX_OFFSET 5
 #define TANGEN_OFFSET 8
 #define VERTEX_SIZE 11
+
+using namespace nanogui;
 
 namespace CGL {
 namespace Misc {
@@ -136,6 +139,28 @@ void SphereMesh::build_data() {
     tangents.col(i + 1) << t2.x, t2.y, t2.z, 0.0;
     tangents.col(i + 2) << t3.x, t3.y, t3.z, 0.0;
   }
+}
+
+void SphereMesh::draw_sphere(GLShader &shader, const Vector3D &p, double r) {
+
+  Matrix4f model;
+  model << r, 0, 0, p.x, 0, r, 0, p.y, 0, 0, r, p.z, 0, 0, 0, 1;
+
+  shader.setUniform("u_model", model);
+
+
+  shader.uploadAttrib("in_position", positions);
+  if (shader.attrib("in_normal", false) != -1) {
+    shader.uploadAttrib("in_normal", normals);
+  }
+  if (shader.attrib("in_uv", false) != -1) {
+    shader.uploadAttrib("in_uv", uvs);
+  }
+  if (shader.attrib("in_tangent", false) != -1) {
+    shader.uploadAttrib("in_tangent", tangents, false);
+  }
+
+  shader.drawArray(GL_TRIANGLES, 0, sphere_num_indices);
 }
 
 } // namespace Misc
