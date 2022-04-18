@@ -2,6 +2,7 @@
 #include <math.h>
 #include <random>
 #include <vector>
+#include <string>
 
 #include "fluid.h"
 #include "particle.h"
@@ -66,19 +67,26 @@ void Fluid::simulate(FluidParameters *fp,
 
     // Find neighboring particles
     for (auto p = begin(particles); p != end(particles); p++) {
-        Vector3D key = hash_position(p->position, fp->h);
-        Vector3D neighbor_key = Vector3D();
+        string key = hash_position(p->position, fp->h);
         (p->neighbors)->clear();
 		
         for (int i = -1; i < 2; i++) {
             for (int j = -1; j < 2; j++) {
                 for (int k = -1; k < 2; k++) {
-					
-                    neighbor_key = key + Vector3D(i, j, k);
+					int index1 = key.find(":");
+                    int x = stoi(key.substr(0, index1), nullptr, 10);
+                    int index2 = key.substr(index1+1, key.size()).find(":");
+                    int y = stoi(key.substr(index1+1, index2), nullptr, 10);
+                    int z = stoi(key.substr(index2+1, key.size()), nullptr, 10);
+                    string neighbor_key = to_string(x + i);
+                    neighbor_key.append(":");
+                    neighbor_key.append(to_string(y + j));
+                    neighbor_key.append(":");
+                    neighbor_key.append(to_string(z + k));
                     if (map.count(neighbor_key) > 0) {
                         for (auto q = begin(*(map[neighbor_key])); q != end(*(map[neighbor_key])); q++) {
-							if ((p->position - q->position).norm() <= fp->h) {
-								(p->neighbors)->emplace_back(&*q);
+							if ((p->position - (*q)->position).norm() <= fp->h) {
+								(p->neighbors)->emplace_back(*q);
 							}
                         }
                     }
@@ -161,7 +169,7 @@ void Fluid::build_spatial_map(float h) {
 
     // Build a spatial map out of all of the particles
 	for (auto p = begin(particles); p != end(particles); p++) {
-		Vector3D key = hash_position(p->position, h);
+		string key = hash_position(p->position, h);
 		if (map.count(key) > 0) {
 			map[key]->emplace_back(&*p);
 		} else {
@@ -172,16 +180,18 @@ void Fluid::build_spatial_map(float h) {
 	}
 }
 
-Vector3D Fluid::hash_position(Vector3D pos, float h) {
+string Fluid::hash_position(Vector3D pos, float h) {
     // Hash a 3D position into a unique Vector3D identifier that represents membership in some 3D box volume.
 	int x_box = floor(pos.x / h);
 	int y_box = floor(pos.y / h);
 	int z_box = floor(pos.z / h);
-	
-	return Vector3D(x_box, y_box, z_box);
+
+    string s = to_string(x_box);
+    s.append(":");
+    s.append(to_string(y_box));
+    s.append(":");
+    s.append(to_string(z_box));
+    
+	return s;
 }
-
-
-
-
 

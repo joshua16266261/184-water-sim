@@ -57,7 +57,7 @@ struct Fluid {
                 vector<CollisionObject *> *collision_objects);
 
   void build_spatial_map(float h);
-  Vector3D hash_position(Vector3D pos, float h);
+  string hash_position(Vector3D pos, float h);
 
   // Fluid properties
   double length;
@@ -71,7 +71,7 @@ struct Fluid {
   vector<Particle> particles;
 
   // Spatial hashing
-  unordered_map<Vector3D, vector<Particle *> *> map;
+  unordered_map<string, vector<Particle *> *> map;
 };
 
 #endif /* FLUID_H */

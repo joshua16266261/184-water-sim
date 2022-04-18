@@ -8,8 +8,10 @@ set(CLOTHSIM_VIEWER_SOURCE
     collision/sphere.cpp
     collision/plane.cpp
 
-    # Miscellaneous
-    misc/sphere_drawing.cpp
+    #Header Files
+    fluid.h
+    particle.h
+
 )
 
 #Windows-only sources
