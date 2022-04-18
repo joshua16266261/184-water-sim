@@ -1,9 +1,10 @@
 #ifndef COLLISIONOBJECT
 #define COLLISIONOBJECT
 
+#include "../particle.h"
+
 using namespace CGL;
 using namespace std;
-using namespace nanogui;
 
 class CollisionObject {
 public:

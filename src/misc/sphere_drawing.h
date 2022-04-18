@@ -14,7 +14,7 @@ public:
   SphereMesh(int num_lat = 40, int num_lon = 40);
 
 
-} // namespace Misc
+}; // namespace Misc
 } // namespace CGL
 
 #endif // CGL_UTIL_SPHEREDRAWING_H

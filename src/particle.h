@@ -8,13 +8,15 @@
 #include <vector>
 
 using namespace CGL;
+using namespace std;
 
 struct Particle {
   Particle(Vector3D position)
       : position(position),
         last_position(position),
-        neighbors = new vector<Particle*> {}
-
+        neighbors(new vector<Particle*>()) {}
+        
+        
   Vector3D velocity(double delta_t) {
     return (position - last_position) / delta_t;
   }

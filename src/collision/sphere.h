@@ -4,6 +4,7 @@
 #include "../fluid.h"
 #include "../misc/sphere_drawing.h"
 #include "collisionObject.h"
+#include "../particle.h"
 
 using namespace CGL;
 using namespace std;
@@ -14,8 +15,8 @@ public:
       : origin(origin), radius(radius), radius2(radius * radius),
         friction(friction), m_sphere_mesh(Misc::SphereMesh(num_lat, num_lon)) {}
 
-  void render(GLShader &shader);
-  void collide(PointMass &pm);
+    void collide(Particle &p);
+  
 
 private:
   Vector3D origin;

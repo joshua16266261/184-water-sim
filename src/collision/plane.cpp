@@ -2,6 +2,7 @@
 
 #include "../fluid.h"
 #include "plane.h"
+#include "../particle.h"
 
 using namespace std;
 using namespace CGL;

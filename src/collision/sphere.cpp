@@ -1,5 +1,6 @@
 #include "../fluid.h"
 #include "sphere.h"
+#include "../particle.h"
 
 using namespace CGL;
 
@@ -12,5 +13,6 @@ void Sphere::collide(Particle &p) {
 		path += origin;
 		Vector3D corr = path - p.last_position;
 		p.position = p.last_position + (1 - friction) * corr;
-	}
-}
+    }
+}}
+

@@ -9,6 +9,7 @@
 #include "CGL/misc.h"
 #include "CGL/vector3D.h"
 #include "collision/collisionObject.h"
+#include "particle.h"
 
 using namespace CGL;
 using namespace std;
@@ -24,9 +25,9 @@ struct FluidParameters {
     total_time is the number of seconds that this simulation will run for
     fps is the number of frames per second
     h is the max distance that 2 particles can be considered neighbors
-  */
-  FluidParameters( double density, double relaxation, Vector3D delta_q, float k = 0.1, float n = 4, float c = 0.01, float total_time, int fps, int solverIters, float h)
-      : density(density), relaxation(relaxation), delta_q(delta_q), k(k), n(n), c(c), total_time(total_time), fps(fps), solverIters(solverIters), h(h) {}
+    */
+  FluidParameters( double density, double relaxation, Vector3D delta_q, float total_time, int fps, int solverIters, float hfloat, float h = 1.0, float k = 0.1, float n = 4, float c = 0.01)
+      : density(density), relaxation(relaxation), delta_q(delta_q), total_time(total_time), fps(fps), solverIters(solverIters), h(h), k(k), n(n), c(c) {}
   ~FluidParameters() {}
 
   // Simulation parameters
