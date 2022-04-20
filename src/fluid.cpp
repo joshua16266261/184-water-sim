@@ -46,8 +46,8 @@ void Fluid::simulate(FluidParameters *fp,
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects) {
     double mass = length * width * height * fp->density / num_length_particles / num_width_particles / num_height_particles;
-    double delta_t = 1.0f / fp->fps;
-
+    double delta_t = 1.0 / fp->fps;
+	
     // Compute total force acting on each point mass.
 	Vector3D total_external_force = Vector3D();
 	for (Vector3D a : external_accelerations) {
@@ -57,7 +57,7 @@ void Fluid::simulate(FluidParameters *fp,
     // Apply external forces
 	for (auto p = begin(particles); p != end(particles); p++) {
 		Vector3D v = p->velocity(delta_t);
-        v += delta_t * total_external_force;
+        v += delta_t * total_external_force / mass;
         Vector3D pos = p->position;
         p->position = pos + delta_t * v;
         p->last_position = pos;
@@ -75,37 +75,90 @@ void Fluid::simulate(FluidParameters *fp,
                 for (int k = -1; k < 2; k++) {
 					int index1 = key.find(":");
                     int x = stoi(key.substr(0, index1), nullptr, 10);
-                    int index2 = key.substr(index1+1, key.size()).find(":");
-                    int y = stoi(key.substr(index1+1, index2), nullptr, 10);
-                    int z = stoi(key.substr(index2+1, key.size()), nullptr, 10);
+                    int index2 = key.substr(index1 + 1, key.size()).find(":");
+                    int y = stoi(key.substr(index1 + 1, index2), nullptr, 10);
+                    int z = stoi(key.substr(index1 + index2 + 2, key.size()), nullptr, 10);
+					
                     string neighbor_key = to_string(x + i);
                     neighbor_key.append(":");
                     neighbor_key.append(to_string(y + j));
                     neighbor_key.append(":");
                     neighbor_key.append(to_string(z + k));
-                    if (map.count(neighbor_key) > 0) {
+					
+                    if (map.count(neighbor_key) > 0 && map[neighbor_key]->size() > 0) {
                         for (auto q = begin(*(map[neighbor_key])); q != end(*(map[neighbor_key])); q++) {
-							if ((p->position - (*q)->position).norm() <= fp->h) {
+							float dist = (p->position - (*q)->position).norm();
+							if (dist <= fp->h && dist > 0) {
 								(p->neighbors)->emplace_back(*q);
 							}
                         }
-                    }
+					}
                 }
             }
         }
     }
-
+	
+	// Line 8 of Algorithm 1
     for (int _ = 0; _ < fp->solverIters; _++) {
+		// Line 9 of Algorithm 1
 		for (auto p = begin(particles); p != end(particles); p++) {
-			// Calculate lambda_i (line 13 of Algorithm 1)
+			// Calculate lambda_i (line 10 of Algorithm 1)
+			
+			// Calculate C_i
 			float rho_i = 0;
 			for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
 				rho_i += pow(pow(fp->h, 2) - (p->position - (*q)->position).norm2(), 3);
-				// TODO
 			}
 			rho_i *= mass * 315.0 / (64 * PI * pow(fp->h, 9));
+			float C_i = rho_i / fp->density - 1;
+			Vector3D pi_term;
+			float not_pi_term;
+			for (auto pj = begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
+				Vector3D r = p->position - (*pj)->position;
+				// Gradient of spiky kernel
+				Vector3D grad_j = -r * 45.0 / (PI * pow(fp->h, 6) * r.norm()) * pow(fp->h - r.norm(), 2);
+				
+				pi_term += grad_j;
+				not_pi_term += grad_j.norm2();
+			}
+			float denom = 1.0 / fp->density * (pi_term.norm2() + not_pi_term);
+			
+			p->lambda = -C_i / (denom + fp->relaxation);
 		}
-        
+		
+		// Line 12 of Algorithm 1
+		for (auto p = begin(particles); p != end(particles); p++) {
+			// Calculate delta pi (line 13 of Algorithm 1)
+			Vector3D delta_p = Vector3D();
+			for (auto pj= begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
+				Vector3D r = p->position - (*pj)->position;
+				// Gradient of spiky kernel
+				Vector3D grad_j = -r * 45.0 / (PI * pow(fp->h, 6) * r.norm()) * pow(fp->h - r.norm(), 2);
+				
+				float q = r.norm() / fp->h;
+				float numer;
+				if (q < 1) {
+					numer = 10.0 / (7 * PI * pow(fp->h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
+				} else if (q < 2) {
+					numer = 10.0 / (28 * PI * pow(fp->h, 2)) * pow(2 - q, 3);
+				} else {
+					numer = 0;
+				}
+				
+				q = fp->delta_q / fp->h;
+				float denom = 10.0 / (7 * PI * pow(fp->h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
+				
+				float s_corr = -fp->k * pow(numer / denom, fp->n);
+				
+				delta_p += (p->lambda + (*pj)->lambda + s_corr) * grad_j;
+			}
+			delta_p *= 1.0 / fp->density;
+			
+			// TODO: Collision detection and response (line 14 of Algorithm 1)
+			
+			// Update position (line 17 of Algorithm 1)
+			p->position += delta_p;
+		}
     }
 	
 	

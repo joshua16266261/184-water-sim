@@ -25,6 +25,7 @@ struct Particle {
   Vector3D position;
   Vector3D last_position;
   vector<Particle*> *neighbors;
+	float lambda; // As calculated in line 10 of Algorithm 1
 };
 
 #endif /* PARTICLE_H */
