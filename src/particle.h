@@ -14,16 +14,15 @@ struct Particle {
   Particle(Vector3D position)
       : position(position),
         last_position(position),
+		velocity(Vector3D()),
+		delta_p(Vector3D()),
         neighbors(new vector<Particle*>()) {}
-        
-        
-  Vector3D velocity(double delta_t) {
-    return (position - last_position) / delta_t;
-  }
 
   // dynamic values
   Vector3D position;
   Vector3D last_position;
+	Vector3D velocity;
+	Vector3D delta_p;
   vector<Particle*> *neighbors;
 	float lambda; // As calculated in line 10 of Algorithm 1
 };

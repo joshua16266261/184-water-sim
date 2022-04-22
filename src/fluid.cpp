@@ -29,6 +29,10 @@ Fluid::~Fluid() {
 void Fluid::buildGrid() {
     // Fill the rectangular prism with particles
     // Depth major order -> row major order
+	float random_offset_bound = 0.001;
+	
+	particles.clear();
+	
 	float x, y, z;
     for (int depth = 0; depth < num_height_particles; depth++) {
         z = depth * height / (num_height_particles - 1);
@@ -36,7 +40,9 @@ void Fluid::buildGrid() {
             y = row * width / (num_width_particles - 1);
 		    for (int col = 0; col < num_length_particles; col++) {
                 x = col * length / (num_length_particles - 1);
-                particles.emplace_back(Particle(Vector3D(x, y, z)));
+                particles.emplace_back(Particle(Vector3D(x + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 y + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 z + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound)));
             }
 		}
 	}
@@ -55,8 +61,9 @@ void Fluid::simulate(FluidParameters *fp,
 	}
 	
     // Apply external forces
+	#pragma omp parallel for
 	for (auto p = begin(particles); p != end(particles); p++) {
-		Vector3D v = p->velocity(delta_t);
+		Vector3D v = p->velocity;
         v += delta_t * total_external_force / mass;
         Vector3D pos = p->position;
         p->position = pos + delta_t * v;
@@ -66,6 +73,7 @@ void Fluid::simulate(FluidParameters *fp,
     build_spatial_map(fp->h);
 
     // Find neighboring particles
+	#pragma omp parallel for
     for (auto p = begin(particles); p != end(particles); p++) {
         string key = hash_position(p->position, fp->h);
         (p->neighbors)->clear();
@@ -101,6 +109,7 @@ void Fluid::simulate(FluidParameters *fp,
 	// Line 8 of Algorithm 1
     for (int _ = 0; _ < fp->solverIters; _++) {
 		// Line 9 of Algorithm 1
+		#pragma omp parallel for
 		for (auto p = begin(particles); p != end(particles); p++) {
 			// Calculate lambda_i (line 10 of Algorithm 1)
 			
@@ -127,6 +136,7 @@ void Fluid::simulate(FluidParameters *fp,
 		}
 		
 		// Line 12 of Algorithm 1
+		#pragma omp parallel for
 		for (auto p = begin(particles); p != end(particles); p++) {
 			// Calculate delta pi (line 13 of Algorithm 1)
 			Vector3D delta_p = Vector3D();
@@ -155,10 +165,20 @@ void Fluid::simulate(FluidParameters *fp,
 			delta_p *= 1.0 / fp->density;
 			
 			// TODO: Collision detection and response (line 14 of Algorithm 1)
-			
-			// Update position (line 17 of Algorithm 1)
-			p->position += delta_p;
+			p->delta_p = delta_p;
+			for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
+				p->velocity = (p->position + delta_p - p->last_position) / delta_t;
+				(*o)->collide(*p, fp->cr, delta_t);
+			}
 		}
+		
+		// Line 16 of Algorithm 1
+		#pragma omp parallel for
+		for (auto p = begin(particles); p != end(particles); p++) {
+			// Update position (line 17 of Algorithm 1)
+			p->position += p->delta_p;
+		}
+		
     }
 	
 	

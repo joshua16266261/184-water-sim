@@ -26,8 +26,8 @@ struct FluidParameters {
     fps is the number of frames per second
     h is the max distance that 2 particles can be considered neighbors
     */
-  FluidParameters(double relaxation, float total_time, int fps, int solverIters, float h = 1.0, float k = 0.1, float n = 4, float c = 0.01, float delta_q = 0.2, double density = 1000)
-      : density(density), relaxation(relaxation), delta_q(delta_q), total_time(total_time), fps(fps), solverIters(solverIters), h(h), k(k), n(n), c(c) {}
+  FluidParameters(double relaxation, float total_time, int fps, int solverIters, float h = 1.0, float k = 0.1, float n = 4, float c = 0.01, float delta_q = 0.2, double density = 1000, float cr = 0.45)
+      : density(density), relaxation(relaxation), delta_q(delta_q), total_time(total_time), fps(fps), solverIters(solverIters), h(h), k(k), n(n), c(c), cr(cr) {}
   ~FluidParameters() {}
 
   // Simulation parameters
@@ -43,6 +43,7 @@ struct FluidParameters {
   float k;
   float n;
   float c;
+	float cr;
 };
 
 struct Fluid {
