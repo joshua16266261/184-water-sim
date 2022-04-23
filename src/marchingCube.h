@@ -10,21 +10,31 @@
 #include "collision/collisionObject.h"
 #include "particle.h"
 
+// Passed into init
 float m_search_radius;
 float m_particle_mass;
 float m_density;
 float m_h;
+float m_isovalue;
 &vector<Particle> m_particles;
 &vector<Particle *> *> m_hash_to_particles;
-Vector3D m_cube_dimensions;
+Vector3D m_unit_cube;
 Vector3D m_box_dimensions;
+
+// The vector of cubes where we keep cubes w/ emplace
+Vector<Cube> cube_Vector;
+
+// The list of triangles we want to rasterizze
+Vector<Triangle> tri_Vector;
 
 struct Cube{
     Vector3D vertices[8];
     float isovalues[8];
 };
 
-
+struct Triangle{
+    Vector3D coordinates[3];
+}
 
 
 int edgeTable[256]={
