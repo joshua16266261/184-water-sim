@@ -1,4 +1,5 @@
-#define FLUID_H
+#ifndef MARCHINGCUBE_H
+#define MARCHINGCUBE_H
 
 #include <unordered_set>
 #include <unordered_map>
@@ -12,6 +13,17 @@
 
 using namespace CGL;
 using namespace std;
+
+struct Cube {
+public:
+    Vector3D vertices[8];
+    float isovalues[8];
+};
+
+struct newTriangle {
+public:
+    Vector3D coordinates[3];
+};
 
 struct marchingCube {
 
@@ -43,25 +55,20 @@ struct marchingCube {
     float isovalue(Vector3D pos, float h);
 
     // Fills an individual cube
-    void createCube(Cube& cube, Vector3D index);
+    void createCube(Cube &cube, Vector3D index);
 
     // Functions for triangle generation
     int Polygonise(Cube cube, double isolevel, newTriangle* triangles);
-    Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2);
+
+
+    // gives the hash position
+    string hash_position(Vector3D pos, float h);
 
 };
 
+Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2);
 
-struct Cube{
-public:
-    Vector3D vertices[8];
-    float isovalues[8];
-};
 
-struct newTriangle {
-public:
-    Vector3D coordinates[3];
-};
 
 
 int edgeTable[256]={
@@ -355,3 +362,5 @@ int triTable[256][16] =
 {0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
+
+#endif /* MARCHINGCUBE_H */

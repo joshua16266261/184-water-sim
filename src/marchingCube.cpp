@@ -11,6 +11,9 @@
 
 #include "marchingCube.h"
 
+using namespace std;
+
+
 // Main grid starts from Vector3D(0,0,0) and ends at Vector3D(box_dimensions.xyz)
 // The list of particles just incase 
 // The hashmap of string to list particles within the same box
@@ -68,26 +71,43 @@ for (int i = 0; i < iter_dimensions.x; i++) {
 float marchingCube::isotropic_kernel(Vector3D r, float h) {
     float constant = 315 / (64 * PI * pow(h, 9));
     if (r.norm() >= 0 && r.norm() <= h) {
-        return constant * pow(h * h - r.norm() * r.norm());
+        return constant * pow(h * h - r.norm() * r.norm(), 3);
     } else {
         return 0;
     }
 }
 
 // Compute the density of a pos (will be used as the isovalue)
-float marchingCube::isovalue(Vector3D pos, float h){
+float marchingCube::isovalue(Vector3D pos, float h) {
     float rho = 0;
     // Hash the position vector
     // Find particles that are neighboring
     // Check for particles that are in specific radius
     string vortex_key = hash_position(pos, h);
-    for (auto q = begin(*(hash_to_particles[vortex_key])); q != end(*(hash_to_particles[vortex_key])); q++) {
-        if ((pos - (*q)->position).norm() <= search_radius) {
-            rho += mass * isotropic_kernel(pos - (q*)->pos, h);
+    for (auto q = begin(*(m_hash_to_particles[vortex_key])); q != end(*(m_hash_to_particles[vortex_key])); q++) {
+        if ((pos - (*q)->position).norm() <= m_search_radius) {
+            rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
         }
     }
     return rho;
 }
+
+string marchingCube::hash_position(Vector3D pos, float h) {
+    // Hash a 3D position into a unique Vector3D identifier that represents membership in some 3D box volume.
+    int x_box = floor(pos.x / h);
+    int y_box = floor(pos.y / h);
+    int z_box = floor(pos.z / h);
+
+    string s = to_string(x_box);
+    s.append(":");
+    s.append(to_string(y_box));
+    s.append(":");
+    s.append(to_string(z_box));
+
+    return s;
+}
+
+
 
 // Create the Marching Cube Grid (each sub-cube within the whole space)
 // Inputs: the index of the cube in all directions (i.e. 1 in X, 4 in Y, and 2 in Z)
@@ -236,7 +256,7 @@ int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles)
 */
 // http://paulbourke.net/geometry/polygonise/ is origin of code. This code is modified
 
-Vector3D marchingCube::VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2) {
+Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2) {
     double mu;
     Vector3D p;
     if (abs(isolevel - valp1) < 0.00001)
