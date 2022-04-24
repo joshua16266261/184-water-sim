@@ -8,7 +8,7 @@
 using namespace nanogui;
 using namespace CGL;
 
-void Sphere::collide(Particle &p, float cr, float delta_t) {
+void Sphere::collide(Particle &p, double cr, double delta_t) {
 	//TODO: Implement sphere collision
 //	Vector3D path = pm.position - origin;
 //	if (path.norm() < radius) {

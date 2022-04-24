@@ -14,7 +14,7 @@ public:
       : origin(origin), radius(radius), radius2(radius * radius),
         friction(friction), m_sphere_mesh(Misc::SphereMesh(num_lat, num_lon)) {}
 	
-  void collide(Particle &p, float cr, float delta_t);
+  void collide(Particle &p, double cr, double delta_t);
 
 private:
   Vector3D origin;

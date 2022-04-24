@@ -11,7 +11,7 @@
 
 using namespace std;
 
-Fluid::Fluid(float length, float width, float height, int num_length_particles, int num_width_particles, int num_height_particles) {
+Fluid::Fluid(double length, double width, double height, int num_length_particles, int num_width_particles, int num_height_particles) {
   this->length = length;
   this->width = width;
   this->height = height;
@@ -29,26 +29,26 @@ Fluid::~Fluid() {
 void Fluid::buildGrid() {
     // Fill the rectangular prism with particles
     // Depth major order -> row major order
-	float random_offset_bound = 0.001;
+	double random_offset_bound = 0.001;
 	
 	particles.clear();
 	
-	float x, y, z;
+	double x, y, z;
     for (int depth = 0; depth < num_height_particles; depth++) {
         z = depth * height / (num_height_particles - 1);
         for (int row = 0; row < num_width_particles; row++) {
             y = row * width / (num_width_particles - 1);
 		    for (int col = 0; col < num_length_particles; col++) {
                 x = col * length / (num_length_particles - 1);
-                particles.emplace_back(Particle(Vector3D(x + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
-														 y + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
-														 z + float(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound)));
+                particles.emplace_back(Particle(Vector3D(x + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 y + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 z + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound)));
             }
 		}
 	}
 }
 
-void Fluid::set_neighbors(Particle *p, float h) {
+void Fluid::set_neighbors(Particle *p, double h) {
 	string key = hash_position(p->position, h);
 	(p->neighbors)->clear();
 	
@@ -69,7 +69,7 @@ void Fluid::set_neighbors(Particle *p, float h) {
 				
 				if (map.count(neighbor_key) > 0 && map[neighbor_key]->size() > 0) {
 					for (auto q = begin(*(map[neighbor_key])); q != end(*(map[neighbor_key])); q++) {
-						float dist = (p->position - (*q)->position).norm();
+						double dist = (p->position - (*q)->position).norm();
 						if (dist <= h && dist > 0) {
 							(p->neighbors)->emplace_back(*q);
 						}
@@ -80,11 +80,11 @@ void Fluid::set_neighbors(Particle *p, float h) {
 	}
 }
 
-float Fluid::get_avg_spacing() {
+double Fluid::get_avg_spacing() {
 	//TODO: Set fp->h based on 3 times average particle spacing
-//	build_spatial_map(<#float h#>)
+//	build_spatial_map(<#double h#>)
 	
-	float spacing = 0;
+	double spacing = 0;
 	for (auto p = begin(particles); p != end(particles); p++) {
 		
 	}
@@ -130,15 +130,16 @@ void Fluid::simulate(FluidParameters *fp,
 			// Calculate lambda_i (line 10 of Algorithm 1)
 			
 			// Calculate C_i
-			float rho_i = 0;
+			double rho_i = 0;
 			for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
 				rho_i += poly6_kernel(p->position - (*q)->position, fp->h);
 			}
 			rho_i *= mass;
 			
-			float C_i = rho_i / fp->density - 1;
-			Vector3D pi_term;
-			float not_pi_term;
+			double C_i = rho_i / fp->density - 1;
+			
+			Vector3D pi_term = Vector3D();
+			double not_pi_term = 0;
 			for (auto pj = begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
 				Vector3D r = p->position - (*pj)->position;
 				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
@@ -146,8 +147,8 @@ void Fluid::simulate(FluidParameters *fp,
 				pi_term += grad_j;
 				not_pi_term += grad_j.norm2();
 			}
-			float denom = 1.0 / fp->density * (pi_term.norm2() + not_pi_term);
-			
+			double denom = 1.0 / fp->density * (pi_term.norm2() + not_pi_term);
+
 			p->lambda = -C_i / (denom + fp->relaxation);
 		}
 		
@@ -160,17 +161,19 @@ void Fluid::simulate(FluidParameters *fp,
 				Vector3D r = p->position - (*pj)->position;
 				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
 				
-				float numer = M4_kernel(r, fp->h);
-				float denom = M4_kernel(fp->delta_q, fp->h);
+				double numer = M4_kernel(r, fp->h);
+				double denom = M4_kernel(fp->delta_q, fp->h);
 				
-				float s_corr = -fp->k * pow(numer / denom, fp->n);
+				double s_corr = -fp->k * pow(numer / denom, fp->n);
 				
 				delta_p += (p->lambda + (*pj)->lambda + s_corr) * grad_j;
 			}
+			
 			delta_p *= 1.0 / fp->density;
 			
 			// Collision detection and response (line 14 of Algorithm 1)
 			p->delta_p = delta_p;
+			
 			for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
 				p->temp_velocity = (p->position + delta_p - p->last_position) / delta_t;
 				(*o)->collide(*p, fp->cr, delta_t);
@@ -205,7 +208,7 @@ void Fluid::simulate(FluidParameters *fp,
 		Vector3D N = Vector3D();
 		
 		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-			float d_omega = ((*pj)->omega - p->omega).norm();
+			double d_omega = ((*pj)->omega - p->omega).norm();
 			Vector3D r= (*pj)->position - p->position;
 			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
 		}
@@ -223,7 +226,7 @@ void Fluid::simulate(FluidParameters *fp,
 	}
 }
 
-void Fluid::build_spatial_map(float h) {
+void Fluid::build_spatial_map(double h) {
     for (const auto &entry : map) {
         delete(entry.second);
     }
@@ -242,7 +245,7 @@ void Fluid::build_spatial_map(float h) {
 	}
 }
 
-string Fluid::hash_position(Vector3D pos, float h) {
+string Fluid::hash_position(Vector3D pos, double h) {
     // Hash a 3D position into a unique Vector3D identifier that represents membership in some 3D box volume.
 	int x_box = floor(pos.x / h);
 	int y_box = floor(pos.y / h);

@@ -15,7 +15,7 @@ public:
   Plane(const Vector3D &point, const Vector3D &normal, double friction)
       : point(point), normal(normal.unit()), friction(friction) {}
 
-  void collide(Particle &p, float cr, float delta_t);
+  void collide(Particle &p, double cr, double delta_t);
 
   Vector3D point;
   Vector3D normal;

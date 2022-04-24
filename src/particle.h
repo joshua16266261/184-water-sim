@@ -27,8 +27,9 @@ struct Particle {
 	Vector3D temp_velocity;
 	Vector3D delta_p;
   vector<Particle*> *neighbors;
-	float lambda; // As calculated in line 10 of Algorithm 1
+	double lambda; // As calculated in line 10 of Algorithm 1
 	Vector3D omega;
+	double rest_density;
 };
 
 #endif /* PARTICLE_H */

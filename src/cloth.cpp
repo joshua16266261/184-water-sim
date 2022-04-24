@@ -10,7 +10,7 @@
 //using namespace std;
 //
 //Cloth::Cloth(double width, double height, int num_width_points,
-//             int num_height_points, float thickness) {
+//             int num_height_points, double thickness) {
 //  this->width = width;
 //  this->height = height;
 //  this->num_width_points = num_width_points;
@@ -32,7 +32,7 @@
 //
 //void Cloth::buildGrid() {
 //  // TODO (Part 1): Build a grid of masses and springs.
-//	float x, y, z;
+//	double x, y, z;
 //
 //	for (int row = 0; row < num_height_points; row++) {
 //		for (int col = 0; col < num_width_points; col++) {
@@ -42,7 +42,7 @@
 //				z = height * row / (num_height_points - 1);
 //			} else {
 //				y = height * row / (num_height_points - 1);
-//				z = float(rand()) / RAND_MAX * 2.0 / 1000 - 1.0 / 1000;
+//				z = double(rand()) / RAND_MAX * 2.0 / 1000 - 1.0 / 1000;
 //			}
 //
 //			bool found = false;
@@ -138,21 +138,21 @@
 //	for (auto s = begin(springs); s != end(springs); s++) {
 //		if (s->spring_type == BENDING && cp->enable_bending_constraints) {
 //			Vector3D f = s->pm_a->position - s->pm_b->position;
-//			float fs = 0.2 * cp->ks * (f.norm() - s->rest_length);
+//			double fs = 0.2 * cp->ks * (f.norm() - s->rest_length);
 //			f.normalize();
 //			f *= fs;
 //			s->pm_a->forces -= f;
 //			s->pm_b->forces += f;
 //		} else if (s->spring_type == SHEARING && cp->enable_shearing_constraints) {
 //			Vector3D f = s->pm_a->position - s->pm_b->position;
-//			float fs = cp->ks * (f.norm() - s->rest_length);
+//			double fs = cp->ks * (f.norm() - s->rest_length);
 //			f.normalize();
 //			f *= fs;
 //			s->pm_a->forces -= f;
 //			s->pm_b->forces += f;
 //		} else if (s->spring_type == STRUCTURAL && cp->enable_structural_constraints) {
 //			Vector3D f = s->pm_a->position - s->pm_b->position;
-//			float fs = cp->ks * (f.norm() - s->rest_length);
+//			double fs = cp->ks * (f.norm() - s->rest_length);
 //			f.normalize();
 //			f *= fs;
 //			s->pm_a->forces -= f;
@@ -164,7 +164,7 @@
 //	for (auto pm = begin(point_masses); pm != end(point_masses); pm++) {
 //		if (!pm->pinned) {
 //			Vector3D xt = pm->position;
-//			float d = cp->damping / 100;
+//			double d = cp->damping / 100;
 //			Vector3D x_prev = pm->last_position;
 //			Vector3D at = pm->forces / mass;
 //			pm->last_position = pm->position;
@@ -191,7 +191,7 @@
 //  // in length more than 10% per timestep [Provot 1995].
 //	for (auto s = begin(springs); s != end(springs); s++) {
 //		Vector3D a_to_b = s->pm_b->position - s->pm_a->position;
-//		float diff = a_to_b.norm() - 1.1 * s->rest_length;
+//		double diff = a_to_b.norm() - 1.1 * s->rest_length;
 //		if (diff > 0) {
 //			a_to_b.normalize();
 //			if (!s->pm_a->pinned && !s->pm_b->pinned) {
@@ -219,7 +219,7 @@
 //
 //  // TODO (Part 4): Build a spatial map out of all of the point masses.
 //	for (auto pm = begin(point_masses); pm != end(point_masses); pm++) {
-//		float key = hash_position(pm->position);
+//		double key = hash_position(pm->position);
 //		if (map.count(key)) {
 //			map[key]->emplace_back(&*pm);
 //		} else {
@@ -232,13 +232,13 @@
 //
 //void Cloth::self_collide(PointMass &pm, double simulation_steps) {
 //  // TODO (Part 4): Handle self-collision for a given point mass.
-//	float key = hash_position(pm.position);
+//	double key = hash_position(pm.position);
 //	Vector3D final_corr = Vector3D();
 //	int count = 0;
 //	for (auto p = begin(*(map.at(key))); p != end(*(map.at(key))); p++) {
 //		if (*p != &pm) {
 //			Vector3D diff = pm.position - (*p)->position;
-//			float length = diff.norm();
+//			double length = diff.norm();
 //			if (length < 2 * thickness) {
 //				diff.normalize();
 //				diff *= (2 * thickness - length);
@@ -255,17 +255,17 @@
 //
 //}
 //
-//float Cloth::hash_position(Vector3D pos) {
-//  // TODO (Part 4): Hash a 3D position into a unique float identifier that represents membership in some 3D box volume.
-//	float w = 3 * width / num_width_points;
-//	float h = 3 * height / num_height_points;
-//	float t = max(w, h);
+//double Cloth::hash_position(Vector3D pos) {
+//  // TODO (Part 4): Hash a 3D position into a unique double identifier that represents membership in some 3D box volume.
+//	double w = 3 * width / num_width_points;
+//	double h = 3 * height / num_height_points;
+//	double t = max(w, h);
 //
 //	int x_box = floor(pos.x / w);
 //	int y_box = floor(pos.y / h);
 //	int z_box = floor(pos.z / t);
 //
-//	return x_box + y_box * float(num_width_points) / 3 + z_box * float(num_width_points) / 3 * float(num_height_points) / 3;
+//	return x_box + y_box * double(num_width_points) / 3 + z_box * double(num_width_points) / 3 * double(num_height_points) / 3;
 //}
 //
 /////////////////////////////////////////////////////////
@@ -306,13 +306,13 @@
 //       *                      *
 //       */
 //
-//      float u_min = x;
+//      double u_min = x;
 //      u_min /= num_width_points - 1;
-//      float u_max = x + 1;
+//      double u_max = x + 1;
 //      u_max /= num_width_points - 1;
-//      float v_min = y;
+//      double v_min = y;
 //      v_min /= num_height_points - 1;
-//      float v_max = y + 1;
+//      double v_max = y + 1;
 //      v_max /= num_height_points - 1;
 //
 //      PointMass *pm_A = pm                       ;

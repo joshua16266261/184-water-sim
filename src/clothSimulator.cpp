@@ -556,8 +556,8 @@
 //void ClothSimulator::mouseMoved(double x, double y) { y = screen_h - y; }
 //
 //void ClothSimulator::mouseLeftDragged(double x, double y) {
-//  float dx = x - mouse_x;
-//  float dy = y - mouse_y;
+//  double dx = x - mouse_x;
+//  double dy = y - mouse_y;
 //
 //  camera.rotate_by(-dy * (PI / screen_h), -dx * (PI / screen_w));
 //}
@@ -672,7 +672,7 @@
 //    fb->setValue(cp->density / 10);
 //    fb->setUnits("g/cm^2");
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { cp->density = (double)(value * 10); });
+//    fb->setCallback([this](double value) { cp->density = (double)(value * 10); });
 //
 //    new Label(panel, "ks :", "sans-bold");
 //
@@ -684,7 +684,7 @@
 //    fb->setUnits("N/m");
 //    fb->setSpinnable(true);
 //    fb->setMinValue(0);
-//    fb->setCallback([this](float value) { cp->ks = value; });
+//    fb->setCallback([this](double value) { cp->ks = value; });
 //  }
 //
 //  // Simulation constants
@@ -740,10 +740,10 @@
 //    percentage->setUnits("%");
 //    percentage->setFontSize(14);
 //
-//    slider->setCallback([percentage](float value) {
+//    slider->setCallback([percentage](double value) {
 //      percentage->setValue(std::to_string(value));
 //    });
-//    slider->setFinalCallback([&](float value) {
+//    slider->setFinalCallback([&](double value) {
 //      cp->damping = (double)value;
 //      // cout << "Final slider value: " << (int)(value * 100) << endl;
 //    });
@@ -770,7 +770,7 @@
 //    fb->setValue(gravity.x);
 //    fb->setUnits("m/s^2");
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { gravity.x = value; });
+//    fb->setCallback([this](double value) { gravity.x = value; });
 //
 //    new Label(panel, "y :", "sans-bold");
 //
@@ -781,7 +781,7 @@
 //    fb->setValue(gravity.y);
 //    fb->setUnits("m/s^2");
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { gravity.y = value; });
+//    fb->setCallback([this](double value) { gravity.y = value; });
 //
 //    new Label(panel, "z :", "sans-bold");
 //
@@ -792,7 +792,7 @@
 //    fb->setValue(gravity.z);
 //    fb->setUnits("m/s^2");
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { gravity.z = value; });
+//    fb->setCallback([this](double value) { gravity.z = value; });
 //  }
 //
 //  window = new Window(screen, "Appearance");
@@ -840,7 +840,7 @@
 //    fb->setFontSize(14);
 //    fb->setValue(this->m_normal_scaling);
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { this->m_normal_scaling = value; });
+//    fb->setCallback([this](double value) { this->m_normal_scaling = value; });
 //
 //    new Label(panel, "Height :", "sans-bold");
 //
@@ -850,6 +850,6 @@
 //    fb->setFontSize(14);
 //    fb->setValue(this->m_height_scaling);
 //    fb->setSpinnable(true);
-//    fb->setCallback([this](float value) { this->m_height_scaling = value; });
+//    fb->setCallback([this](double value) { this->m_height_scaling = value; });
 //  }
 //}

@@ -18,22 +18,23 @@ void write_pos_to_file(Fluid *f, string filename) {
 }
 
 int main(int argc, char **argv) {
-	Fluid *f = new Fluid(5, 5, 5, 10, 10, 10);
+	Fluid *f = new Fluid(1, 1, 1, 10, 10, 10);
 	
 	FluidParameters *fp = new FluidParameters(EPS_F, 5, 20, 10);
-	fp->h = 0.5;
+	fp->h = 1;
+	fp->delta_q = 0.2 * fp->h * Vector3D(1, 0, 0);
 	
 	Vector3D g = Vector3D(0, 0, -9.81);
 	vector<Vector3D> accel = vector<Vector3D>{g};
 	
 	Plane *floor = new Plane(Vector3D(0, 0, -1), Vector3D(0, 0, 1), 0);
 	Plane *left_wall = new Plane(Vector3D(-1, 0, 0), Vector3D(1, 0, 0), 0);
-	Plane *right_wall = new Plane(Vector3D(6, 0, 0), Vector3D(-1, 0, 0), 0);
+	Plane *right_wall = new Plane(Vector3D(2, 0, 0), Vector3D(-1, 0, 0), 0);
 	Plane *front_wall = new Plane(Vector3D(0, -1, 0), Vector3D(0, 1, 0), 0);
-	Plane *back_wall = new Plane(Vector3D(0, 6, 0), Vector3D(0, -1, 0), 0);
+	Plane *back_wall = new Plane(Vector3D(0, 2, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject *> collision = vector<CollisionObject *>{floor, left_wall, right_wall, front_wall, back_wall};
 	
-	
+//	int frame = 0;
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);

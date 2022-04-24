@@ -10,7 +10,7 @@ using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
 
-void Plane::collide(Particle &p, float cr, float delta_t) {
+void Plane::collide(Particle &p, double cr, double delta_t) {
 //	if (dot(pm.position - point, normal) * dot(pm.last_position - point, normal) <= 0) {
 //		Vector3D dir = dot(point - pm.position, normal) / dot(normal, normal) * normal;
 //		Vector3D tang = pm.position + dir;
@@ -26,7 +26,7 @@ void Plane::collide(Particle &p, float cr, float delta_t) {
 	if (dot(pos - point, normal) < 0) {
 		Vector3D dir = dot(point - pos, normal) / dot(normal, normal) * normal;
 		Vector3D tang = p.position + dir;
-		float penetration = (pos - tang).norm();
+		double penetration = (pos - tang).norm();
 		p.temp_velocity -= (1 + cr * penetration / (delta_t * p.temp_velocity.norm())) * dot(p.temp_velocity, normal) * normal;
 		p.delta_p = tang - p.position + SURFACE_OFFSET * normal;
 	}
