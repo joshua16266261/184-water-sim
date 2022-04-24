@@ -59,6 +59,22 @@ struct Fluid {
 
   void build_spatial_map(float h);
   string hash_position(Vector3D pos, float h);
+	
+	void set_neighbors(Particle *p, float h);
+	
+	float poly6_kernel(Vector3D r, float h) {
+		if (r.norm() > h) {
+			return 0;
+		}
+		return 315.0 / (64 * PI * pow(h, 9)) * pow(pow(h, 2) - r.norm2(), 3);
+	}
+	
+	Vector3D grad_spiky_kernel(Vector3D r, float h) {
+		if (r.norm() > h) {
+			return Vector3D();
+		}
+		return -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2);
+	}
 
   // Fluid properties
   double length;

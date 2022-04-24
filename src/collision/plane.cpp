@@ -11,7 +11,6 @@ using namespace CGL;
 #define SURFACE_OFFSET 0.0001
 
 void Plane::collide(Particle &p, float cr, float delta_t) {
-	//TODO: Implement plane collision
 //	if (dot(pm.position - point, normal) * dot(pm.last_position - point, normal) <= 0) {
 //		Vector3D dir = dot(point - pm.position, normal) / dot(normal, normal) * normal;
 //		Vector3D tang = pm.position + dir;
