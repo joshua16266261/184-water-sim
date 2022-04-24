@@ -29,7 +29,7 @@ struct Particle {
   vector<Particle*> *neighbors;
 	double lambda; // As calculated in line 10 of Algorithm 1
 	Vector3D omega;
-	double rest_density;
+	Vector3D forces;
 };
 
 #endif /* PARTICLE_H */

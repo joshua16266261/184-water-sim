@@ -71,17 +71,11 @@ struct Fluid {
 		return 315.0 / (64 * PI * pow(h, 9)) * pow(pow(h, 2) - r.norm2(), 3);
 	}
 	
-	Vector3D grad_poly6_kernel(Vector3D r, double h) {
-		if (r.norm() > h) {
-			return Vector3D();
-		}
-		return -r * 945.0 / (32 * PI * pow(h, 9)) * pow(pow(h, 2) - r.norm2(), 2);
-	}
-	
 	Vector3D grad_spiky_kernel(Vector3D r, double h) {
 		if (r.norm() > h) {
 			return Vector3D();
 		}
+//		std::cout << "r" << r << "rnorm" << r.norm() << "numer" << pow(h - r.norm(), 2) << "denom" << PI * pow(h, 6) * r.norm() << "output" << -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2) << '\n';
 		return -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2);
 	}
 	
@@ -104,7 +98,7 @@ struct Fluid {
   int num_length_particles;
   int num_width_particles;
   int num_height_particles;
-	bool is_first_frame;
+	int frame;
 
   // Fluid components
   vector<Particle> particles;
