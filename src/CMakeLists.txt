@@ -7,6 +7,10 @@ set(CLOTHSIM_VIEWER_SOURCE
     fluid.h
     particle.h
 
+    # Marching Cubes
+    marchingCube.cpp
+    marchingCube.h
+
     # Cloth simulation objects
     cloth.cpp
     clothMesh.cpp

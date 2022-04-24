@@ -17,8 +17,8 @@
 // Cube dimensions we want: ex: box_dim = (9,9,9), cube_dim = (3,3,3) so (27 in total since 9/3 ^ 3)
 // search_radius, mass, h, and other variables
 
-void init(Vector3D box_dimensions, Vector3D unit_cube,
-&vector<Particle> particles, &unordered_map<string, &vector<Particle *> *> hash_to_particles,
+void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
+ vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
  float h, float search_radius, float particle_mass, 
  float density, float isovalue) {
 
@@ -28,7 +28,7 @@ m_unit_cube = unit_cube;
 m_particles = particles;
 m_hash_to_particles = hash_to_particles;
 m_h = h;
-m_isovalue isovalue;
+m_isovalue = isovalue;
 m_search_radius = search_radius;
 m_particle_mass = particle_mass;
 m_density = density;
@@ -38,25 +38,25 @@ m_density = density;
 // delete(tri_vector);
 // tri_Vector = new Vector<Triangle>();
 ///
-tri_Vector = Vector<Triangle>();
+vector<newTriangle> tri_Vector = vector<newTriangle>();
 
 // Slice up the main box into cubes
 // we need to use the create cube function to input 
 // and then we just throw our cube into a vector of cubes
 
 // The number of times we iterate through each dimension (l,w,h)
-Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / singular_cube_dimensions.x), ceil(box_dimensions.y / singular_cube_dimensions.y),
-    ceil(box_dimensions.z / singular_cube_dimensions.z));
+Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / m_unit_cube.x), ceil(box_dimensions.y / m_unit_cube.y),
+    ceil(box_dimensions.z / m_unit_cube.z));
 
 for (int i = 0; i < iter_dimensions.x; i++) {
     for (int j = 0; j < iter_dimensions.y; j++) {
         for (int k = 0; k < iter_dimensions.z; k++) {
-            Cube marchCube = Cube();
+            Cube &marchCube = Cube();
 
             // Will create a empty cube pass in top left positional index of the cube 
             // Iterate over cube creation and then just emplace back after you fill it up
             Vector3D index = Vector3D(i, j, k);
-            createCube(&marchCube, index);
+            createCube(marchCube, index);
             cube_Vector.emplace_back(marchCube);
 
         }
@@ -65,9 +65,9 @@ for (int i = 0; i < iter_dimensions.x; i++) {
 }
 
 // r is the vector from particle to position p
-float isotropic_kernel(Vector3D r, float h) {
+float marchingCube::isotropic_kernel(Vector3D r, float h) {
     float constant = 315 / (64 * PI * pow(h, 9));
-    if (r.norm() >= 0 and r.norm() <= h) {
+    if (r.norm() >= 0 && r.norm() <= h) {
         return constant * pow(h * h - r.norm() * r.norm());
     } else {
         return 0;
@@ -75,12 +75,12 @@ float isotropic_kernel(Vector3D r, float h) {
 }
 
 // Compute the density of a pos (will be used as the isovalue)
-float isovalue(Vector3D pos, float h){
+float marchingCube::isovalue(Vector3D pos, float h){
     float rho = 0;
     // Hash the position vector
     // Find particles that are neighboring
     // Check for particles that are in specific radius
-    String vortex_key = hash_position(pos, h);
+    string vortex_key = hash_position(pos, h);
     for (auto q = begin(*(hash_to_particles[vortex_key])); q != end(*(hash_to_particles[vortex_key])); q++) {
         if ((pos - (*q)->position).norm() <= search_radius) {
             rho += mass * isotropic_kernel(pos - (q*)->pos, h);
@@ -91,7 +91,7 @@ float isovalue(Vector3D pos, float h){
 
 // Create the Marching Cube Grid (each sub-cube within the whole space)
 // Inputs: the index of the cube in all directions (i.e. 1 in X, 4 in Y, and 2 in Z)
-void createCube(Cube &cube, Vector3D index) {
+void marchingCube::createCube(Cube &cube, Vector3D index) {
     // Assign all the vertices within a cube to its approperiate (x, y, z) positions
     // Assign all approperiate isovalues to each vertex
     // Then in the init() function, push the cube into our cube_vector
@@ -149,7 +149,7 @@ void createCube(Cube &cube, Vector3D index) {
 // The triangles is just a empty list of triangles you pass in to have it filled,
 // THIS IS WHERE WE FILL IN THE TRIANGLES WHERE WE WILL USE IT TO FILL IN THE RASTERIZER
 // This code is modified btw
-int Polygonise(Cube cube, double isolevel, Triangle* triangles) {
+int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles) {
     int i, ntriang;
     int cubeindex;
     Vector3D vertlist[12];
@@ -159,14 +159,14 @@ int Polygonise(Cube cube, double isolevel, Triangle* triangles) {
      tells us which vertices are inside of the surface
     */
     cubeindex = 0;
-    if (grid.val[0] < isolevel) cubeindex |= 1;
-    if (grid.val[1] < isolevel) cubeindex |= 2;
-    if (grid.val[2] < isolevel) cubeindex |= 4;
-    if (grid.val[3] < isolevel) cubeindex |= 8;
-    if (grid.val[4] < isolevel) cubeindex |= 16;
-    if (grid.val[5] < isolevel) cubeindex |= 32;
-    if (grid.val[6] < isolevel) cubeindex |= 64;
-    if (grid.val[7] < isolevel) cubeindex |= 128;
+    if (cube.isovalues[0] < isolevel) cubeindex |= 1;
+    if (cube.isovalues[1] < isolevel) cubeindex |= 2;
+    if (cube.isovalues[2] < isolevel) cubeindex |= 4;
+    if (cube.isovalues[3] < isolevel) cubeindex |= 8;
+    if (cube.isovalues[4] < isolevel) cubeindex |= 16;
+    if (cube.isovalues[5] < isolevel) cubeindex |= 32;
+    if (cube.isovalues[6] < isolevel) cubeindex |= 64;
+    if (cube.isovalues[7] < isolevel) cubeindex |= 128;
 
 
     /* Cube is entirely in/out of the surface */
@@ -236,14 +236,14 @@ int Polygonise(Cube cube, double isolevel, Triangle* triangles) {
 */
 // http://paulbourke.net/geometry/polygonise/ is origin of code. This code is modified
 
-Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2) {
+Vector3D marchingCube::VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2) {
     double mu;
     Vector3D p;
-    if (ABS(isolevel - valp1) < 0.00001)
+    if (abs(isolevel - valp1) < 0.00001)
         return(p1);
-    if (ABS(isolevel - valp2) < 0.00001)
+    if (abs(isolevel - valp2) < 0.00001)
         return(p2);
-    if (ABS(valp1 - valp2) < 0.00001)
+    if (abs(valp1 - valp2) < 0.00001)
         return(p1);
     mu = (isolevel - valp1) / (valp2 - valp1);
     p.x = p1.x + mu * (p2.x - p1.x);
@@ -254,8 +254,4 @@ Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, d
 
     return p;
 }
-
-
-
-
 

@@ -10,31 +10,58 @@
 #include "collision/collisionObject.h"
 #include "particle.h"
 
-// Passed into init
-float m_search_radius;
-float m_particle_mass;
-float m_density;
-float m_h;
-float m_isovalue;
-&vector<Particle> m_particles;
-&vector<Particle *> *> m_hash_to_particles;
-Vector3D m_unit_cube;
-Vector3D m_box_dimensions;
+using namespace CGL;
+using namespace std;
 
-// The vector of cubes where we keep cubes w/ emplace
-Vector<Cube> cube_Vector;
+struct marchingCube {
 
-// The list of triangles we want to rasterizze
-Vector<Triangle> tri_Vector;
+    // The values passed into init
+    float m_search_radius;
+    float m_particle_mass;
+    float m_density;
+    float m_h;
+    float m_isovalue;
+    vector<Particle>& m_particles;
+    unordered_map<string, vector<Particle*>*>& m_hash_to_particles;
+    Vector3D m_unit_cube;
+    Vector3D m_box_dimensions;
+
+    // The vector of cubes where we keep cubes w/ emplace
+    vector<Cube> cube_Vector;
+
+    // The list of triangles we want to rasterizze
+    vector<newTriangle> tri_Vector;
+
+    // The initiation function
+    void init(Vector3D box_dimensions, Vector3D unit_cube,
+        vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
+        float h, float search_radius, float particle_mass,
+        float density, float isovalue);
+
+    // The isotropic kernel function and isovalue function
+    float isotropic_kernel(Vector3D r, float h);
+    float isovalue(Vector3D pos, float h);
+
+    // Fills an individual cube
+    void createCube(Cube& cube, Vector3D index);
+
+    // Functions for triangle generation
+    int Polygonise(Cube cube, double isolevel, newTriangle* triangles);
+    Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2);
+
+};
+
 
 struct Cube{
+public:
     Vector3D vertices[8];
     float isovalues[8];
 };
 
-struct Triangle{
+struct newTriangle {
+public:
     Vector3D coordinates[3];
-}
+};
 
 
 int edgeTable[256]={
@@ -69,7 +96,7 @@ int edgeTable[256]={
 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
-0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0   };
+0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0 };
 
 int triTable[256][16] =
 {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
