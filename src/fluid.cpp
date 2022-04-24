@@ -80,6 +80,18 @@ void Fluid::set_neighbors(Particle *p, float h) {
 	}
 }
 
+float Fluid::get_avg_spacing() {
+	//TODO: Set fp->h based on 3 times average particle spacing
+//	build_spatial_map(<#float h#>)
+	
+	float spacing = 0;
+	for (auto p = begin(particles); p != end(particles); p++) {
+		
+	}
+	
+	return 0;
+}
+
 void Fluid::simulate(FluidParameters *fp,
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects) {
@@ -120,10 +132,8 @@ void Fluid::simulate(FluidParameters *fp,
 			// Calculate C_i
 			float rho_i = 0;
 			for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
-//				rho_i += pow(pow(fp->h, 2) - (p->position - (*q)->position).norm2(), 3);
 				rho_i += poly6_kernel(p->position - (*q)->position, fp->h);
 			}
-//			rho_i *= mass * 315.0 / (64 * PI * pow(fp->h, 9));
 			rho_i *= mass;
 			
 			float C_i = rho_i / fp->density - 1;
@@ -131,8 +141,6 @@ void Fluid::simulate(FluidParameters *fp,
 			float not_pi_term;
 			for (auto pj = begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
 				Vector3D r = p->position - (*pj)->position;
-				// Gradient of spiky kernel
-//				Vector3D grad_j = -r * 45.0 / (PI * pow(fp->h, 6) * r.norm()) * pow(fp->h - r.norm(), 2);
 				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
 				
 				pi_term += grad_j;
@@ -150,22 +158,10 @@ void Fluid::simulate(FluidParameters *fp,
 			Vector3D delta_p = Vector3D();
 			for (auto pj= begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
 				Vector3D r = p->position - (*pj)->position;
-				// Gradient of spiky kernel
-//				Vector3D grad_j = -r * 45.0 / (PI * pow(fp->h, 6) * r.norm()) * pow(fp->h - r.norm(), 2);
 				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
 				
-				float q = r.norm() / fp->h;
-				float numer;
-				if (q < 1) {
-					numer = 10.0 / (7 * PI * pow(fp->h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
-				} else if (q < 2) {
-					numer = 10.0 / (28 * PI * pow(fp->h, 2)) * pow(2 - q, 3);
-				} else {
-					numer = 0;
-				}
-				
-				q = fp->delta_q / fp->h;
-				float denom = 10.0 / (7 * PI * pow(fp->h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
+				float numer = M4_kernel(r, fp->h);
+				float denom = M4_kernel(fp->delta_q, fp->h);
 				
 				float s_corr = -fp->k * pow(numer / denom, fp->n);
 				
@@ -173,10 +169,10 @@ void Fluid::simulate(FluidParameters *fp,
 			}
 			delta_p *= 1.0 / fp->density;
 			
-			// TODO: Collision detection and response (line 14 of Algorithm 1)
+			// Collision detection and response (line 14 of Algorithm 1)
 			p->delta_p = delta_p;
 			for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
-				p->velocity = (p->position + delta_p - p->last_position) / delta_t;
+				p->temp_velocity = (p->position + delta_p - p->last_position) / delta_t;
 				(*o)->collide(*p, fp->cr, delta_t);
 			}
 		}
@@ -190,7 +186,41 @@ void Fluid::simulate(FluidParameters *fp,
 		
     }
 	
-
+	// Vorticity (line 22 of Algorithm 1)
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		p->omega = Vector3D();
+		
+		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+			Vector3D v_ij = (*pj)->velocity - p->velocity;
+			p->omega += cross(v_ij, -grad_spiky_kernel(p->position - (*pj)->position, fp->h));
+			
+			// Viscosity
+			p->temp_velocity += fp->c * v_ij * M4_kernel((*pj)->position - p->position, fp->h);
+		}
+	}
+	
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		Vector3D N = Vector3D();
+		
+		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+			float d_omega = ((*pj)->omega - p->omega).norm();
+			Vector3D r= (*pj)->position - p->position;
+			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+		}
+		
+		if (N.norm() > EPS_F) {
+			N.normalize();
+		}
+		
+		p->temp_velocity += delta_t * fp->vorticity_eps * cross(N, p->omega);
+	}
+	
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		p->velocity = p->temp_velocity;
+	}
 }
 
 void Fluid::build_spatial_map(float h) {

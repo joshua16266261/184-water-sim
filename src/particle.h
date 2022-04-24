@@ -17,7 +17,8 @@ struct Particle {
 		velocity(Vector3D()),
 		temp_velocity(Vector3D()),
 		delta_p(Vector3D()),
-        neighbors(new vector<Particle*>()) {}
+        neighbors(new vector<Particle*>()),
+		omega(Vector3D()){}
 
   // dynamic values
   Vector3D position;
@@ -27,6 +28,7 @@ struct Particle {
 	Vector3D delta_p;
   vector<Particle*> *neighbors;
 	float lambda; // As calculated in line 10 of Algorithm 1
+	Vector3D omega;
 };
 
 #endif /* PARTICLE_H */

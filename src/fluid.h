@@ -26,8 +26,8 @@ struct FluidParameters {
     fps is the number of frames per second
     h is the max distance that 2 particles can be considered neighbors
     */
-  FluidParameters(double relaxation, float total_time, int fps, int solverIters, float h = 1.0, float k = 0.1, float n = 4, float c = 0.01, float delta_q = 0.2, double density = 1000, float cr = 0.45)
-      : density(density), relaxation(relaxation), delta_q(delta_q), total_time(total_time), fps(fps), solverIters(solverIters), h(h), k(k), n(n), c(c), cr(cr) {}
+  FluidParameters(double relaxation, float total_time, int fps, int solverIters, float h = 1.0, float k = 0.1, float n = 4, float c = 0.01, float delta_q = 0.2, double density = 1000, float cr = 0.45, float vorticity_eps = 0.01)
+      : density(density), relaxation(relaxation), delta_q(delta_q), total_time(total_time), fps(fps), solverIters(solverIters), h(h), k(k), n(n), c(c), cr(cr), vorticity_eps(vorticity_eps) {}
   ~FluidParameters() {}
 
   // Simulation parameters
@@ -44,6 +44,7 @@ struct FluidParameters {
   float n;
   float c;
 	float cr;
+	float vorticity_eps;
 };
 
 struct Fluid {
@@ -61,6 +62,7 @@ struct Fluid {
   string hash_position(Vector3D pos, float h);
 	
 	void set_neighbors(Particle *p, float h);
+	float get_avg_spacing();
 	
 	float poly6_kernel(Vector3D r, float h) {
 		if (r.norm() > h) {
@@ -74,6 +76,18 @@ struct Fluid {
 			return Vector3D();
 		}
 		return -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2);
+	}
+	
+	float M4_kernel(Vector3D r, float h) {
+		if (r.norm() > 2 * h) {
+			return 0;
+		}
+		float q = r.norm() / h;
+		if (q < 1) {
+			return 10.0 / (7 * PI * pow(h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
+		} else if (q < 2) {
+			return 10.0 / (28 * PI * pow(h, 2)) * pow(2 - q, 3);
+		}
 	}
 
   // Fluid properties

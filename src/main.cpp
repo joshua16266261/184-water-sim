@@ -18,9 +18,10 @@ void write_pos_to_file(Fluid *f, string filename) {
 }
 
 int main(int argc, char **argv) {
-	Fluid *f = new Fluid(5, 5, 5, 20, 20, 20);
+	Fluid *f = new Fluid(5, 5, 5, 10, 10, 10);
 	
-	FluidParameters *fp = new FluidParameters(EPS_F, 5, 20, 100);
+	FluidParameters *fp = new FluidParameters(EPS_F, 5, 20, 10);
+	fp->h = 0.5;
 	
 	Vector3D g = Vector3D(0, 0, -9.81);
 	vector<Vector3D> accel = vector<Vector3D>{g};
@@ -33,7 +34,7 @@ int main(int argc, char **argv) {
 	vector<CollisionObject *> collision = vector<CollisionObject *>{floor, left_wall, right_wall, front_wall, back_wall};
 	
 	
-	for (int frame = 0; frame < 5 * 20; frame++) {
+	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
 		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");

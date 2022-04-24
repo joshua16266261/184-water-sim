@@ -27,7 +27,7 @@ void Plane::collide(Particle &p, float cr, float delta_t) {
 		Vector3D dir = dot(point - pos, normal) / dot(normal, normal) * normal;
 		Vector3D tang = p.position + dir;
 		float penetration = (pos - tang).norm();
-		p.velocity -= (1 + cr * penetration / (delta_t * p.velocity.norm())) * dot(p.velocity, normal) * normal;
+		p.temp_velocity -= (1 + cr * penetration / (delta_t * p.temp_velocity.norm())) * dot(p.temp_velocity, normal) * normal;
 		p.delta_p = tang - p.position + SURFACE_OFFSET * normal;
 	}
 	
