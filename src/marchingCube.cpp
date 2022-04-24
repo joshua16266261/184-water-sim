@@ -42,6 +42,7 @@ m_density = density;
 // tri_Vector = new Vector<Triangle>();
 ///
 vector<newTriangle> tri_Vector = vector<newTriangle>();
+vector<Cube> cube_Vector = vector<Cube>();
 
 // Slice up the main box into cubes
 // we need to use the create cube function to input 
@@ -143,6 +144,29 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     cube.vertices[6] = Vector3D(index.x + unit_L, index.y + unit_W, index.z);
     cube.vertices[7] = Vector3D(index.x, index.y + unit_W, index.z);
     
+
+    // The way we calculate the normals is to take a vertex and it's diagonal counterpart and subtract it to get the
+    // 3d ray that is orthogonal/diagonal to the vertex and it's 3 edges
+    // 
+    //      x--------x
+    //     /|       /|
+    //    x--------x |
+    //    | |      | |
+    //    | x------|-x  
+    //    x--------x
+    // 
+    // However, another way is to do something with the isovalues
+    // but we can try it if this one does not work.
+    // 
+    cube.normals[0] = cube.vertices[0] - (cube.vertices[0] - cube.vertices[6]).unit();
+    cube.normals[1] = cube.vertices[1] - (cube.vertices[1] - cube.vertices[7]).unit();
+    cube.normals[2] = cube.vertices[2] - (cube.vertices[2] - cube.vertices[4]).unit();
+    cube.normals[3] = cube.vertices[3] - (cube.vertices[3] - cube.vertices[5]).unit();
+    cube.normals[4] = cube.vertices[4] - (cube.vertices[4] - cube.vertices[2]).unit();
+    cube.normals[5] = cube.vertices[5] - (cube.vertices[5] - cube.vertices[3]).unit();
+    cube.normals[6] = cube.vertices[6] - (cube.vertices[6] - cube.vertices[0]).unit();
+    cube.normals[7] = cube.vertices[7] - (cube.vertices[7] - cube.vertices[1]).unit();
+
     // Assign the isovalue for each cube verticie 
     for (int i = 0; i < 8; i++) {
         cube.isovalues[i] = isovalue(cube.vertices[i], m_h);
@@ -173,6 +197,7 @@ int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles)
     int i, ntriang;
     int cubeindex;
     Vector3D vertlist[12];
+    Vector3D normlist[12];
 
     /*
      Determine the index into the edge table which
@@ -194,42 +219,72 @@ int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles)
         return 0;
 
     /* Find the vertices where the surface intersects the cube */
+    // FOR THIS FUNCTION I ADDED IN GETTING THE NORMALS TOO //
     if (edgeTable[cubeindex] & 1)
         vertlist[0] =
         VertexInterp(isolevel, cube.vertices[0], cube.vertices[1], cube.isovalues[0], cube.isovalues[1]);
+        normlist[0] = VertexInterpNormals(isolevel, cube.normals[0], cube.normals[1], cube.isovalues[0], cube.isovalues[1]);
+
     if (edgeTable[cubeindex] & 2)
         vertlist[1] =
         VertexInterp(isolevel, cube.vertices[1], cube.vertices[2], cube.isovalues[1], cube.isovalues[2]);
+        normlist[1] = VertexInterpNormals(isolevel, cube.normals[1], cube.normals[2], cube.isovalues[1], cube.isovalues[2]);
+
     if (edgeTable[cubeindex] & 4)
         vertlist[2] =
         VertexInterp(isolevel, cube.vertices[2], cube.vertices[3], cube.isovalues[2], cube.isovalues[3]);
+        normlist[2] = VertexInterpNormals(isolevel, cube.normals[2], cube.normals[3], cube.isovalues[2], cube.isovalues[3]);
+
     if (edgeTable[cubeindex] & 8)
         vertlist[3] =
         VertexInterp(isolevel, cube.vertices[3], cube.vertices[0], cube.isovalues[3], cube.isovalues[0]);
+        normlist[3] = VertexInterpNormals(isolevel, cube.normals[3], cube.normals[0], cube.isovalues[3], cube.isovalues[0]);
+
     if (edgeTable[cubeindex] & 16)
         vertlist[4] =
         VertexInterp(isolevel, cube.vertices[4], cube.vertices[5], cube.isovalues[4], cube.isovalues[5]);
+        normlist[4] = VertexInterpNormals(isolevel, cube.normals[4], cube.normals[5], cube.isovalues[4], cube.isovalues[5]);
+
     if (edgeTable[cubeindex] & 32)
         vertlist[5] =
         VertexInterp(isolevel, cube.vertices[5], cube.vertices[6], cube.isovalues[5], cube.isovalues[6]);
+        normlist[5] = VertexInterpNormals(isolevel, cube.normals[5], cube.normals[6], cube.isovalues[5], cube.isovalues[6]);
+
     if (edgeTable[cubeindex] & 64)
         vertlist[6] =
         VertexInterp(isolevel, cube.vertices[6], cube.vertices[7], cube.isovalues[6], cube.isovalues[7]);
+        normlist[6] = VertexInterpNormals(isolevel, cube.normals[6], cube.normals[7], cube.isovalues[6], cube.isovalues[7]);
+
+
     if (edgeTable[cubeindex] & 128)
         vertlist[7] =
         VertexInterp(isolevel, cube.vertices[7], cube.vertices[4], cube.isovalues[7], cube.isovalues[4]);
+        normlist[7] = VertexInterpNormals(isolevel, cube.normals[7], cube.normals[4], cube.isovalues[7], cube.isovalues[4]);
+
+
     if (edgeTable[cubeindex] & 256)
         vertlist[8] =
         VertexInterp(isolevel, cube.vertices[0], cube.vertices[4], cube.isovalues[0], cube.isovalues[4]);
+        normlist[8] = VertexInterpNormals(isolevel, cube.normals[0], cube.normals[4], cube.isovalues[0], cube.isovalues[4]);
+
+
     if (edgeTable[cubeindex] & 512)
         vertlist[9] =
         VertexInterp(isolevel, cube.vertices[1], cube.vertices[5], cube.isovalues[1], cube.isovalues[5]);
+        normlist[9] = VertexInterpNormals(isolevel, cube.normals[1], cube.normals[5], cube.isovalues[1], cube.isovalues[5]);
+
+
     if (edgeTable[cubeindex] & 1024)
         vertlist[10] =
         VertexInterp(isolevel, cube.vertices[2], cube.vertices[6], cube.isovalues[2], cube.isovalues[6]);
+        normlist[10] = VertexInterpNormals(isolevel, cube.normals[2], cube.normals[6], cube.isovalues[2], cube.isovalues[6]);
+
+
     if (edgeTable[cubeindex] & 2048)
         vertlist[11] =
         VertexInterp(isolevel, cube.vertices[3], cube.vertices[7], cube.isovalues[3], cube.isovalues[7]);
+        normlist[10] = VertexInterpNormals(isolevel, cube.normals[3], cube.normals[7], cube.isovalues[3], cube.isovalues[7]);
+
 
     /* Create the triangle */
     // Here we have a passed in list of triangles, 
@@ -240,6 +295,10 @@ int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles)
         triangles[ntriang].coordinates[0] = vertlist[triTable[cubeindex][i]];
         triangles[ntriang].coordinates[1] = vertlist[triTable[cubeindex][i + 1]];
         triangles[ntriang].coordinates[2] = vertlist[triTable[cubeindex][i + 2]];
+
+        triangles[ntriang].normal[0] = normlist[triTable[cubeindex][i + 2]];
+        triangles[ntriang].normal[1] = normlist[triTable[cubeindex][i + 2]];
+        triangles[ntriang].normal[2] = normlist[triTable[cubeindex][i + 2]];
 
         // THIS IS THE VECTOR WE GET ALL OUR TRIANGLES WE WANT TO RASTERIZE INTO 3D FROM
         tri_Vector.emplace_back(triangles[ntriang]);
@@ -274,4 +333,24 @@ Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, d
 
     return p;
 }
+
+Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double valp1, double valp2) {
+    double mu;
+    Vector3D n;
+    if (abs(isolevel - valp1) < 0.00001)
+        return(n1);
+    if (abs(isolevel - valp2) < 0.00001)
+        return(n2);
+    if (abs(valp1 - valp2) < 0.00001)
+        return(n1);
+    mu = (isolevel - valp1) / (valp2 - valp1);
+    n.x = n1.x + mu * (n2.x - n1.x);
+    n.y = n1.y + mu * (n2.y - n1.y);
+    n.z = n1.z + mu * (n2.z - n1.z);
+
+    // We may also need to have it so we return p's norm, so maybe return something else instead of a 3D triangle
+
+    return n;
+}
+
 

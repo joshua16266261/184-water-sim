@@ -17,12 +17,14 @@ using namespace std;
 struct Cube {
 public:
     Vector3D vertices[8];
+    Vector3D normals[8];
     float isovalues[8];
 };
 
 struct newTriangle {
 public:
     Vector3D coordinates[3];
+    Vector3D normal[3];
 };
 
 struct marchingCube {
@@ -66,8 +68,10 @@ struct marchingCube {
 
 };
 
+// Iterpolations
 Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, double valp2);
 
+Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double valp1, double valp2);
 
 
 
