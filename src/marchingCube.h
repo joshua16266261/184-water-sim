@@ -66,6 +66,9 @@ struct marchingCube {
     // gives the hash position
     string hash_position(Vector3D pos, float h);
 
+    // Outputs the OBJ file for marching cube
+    void marchingCube::triToObj(string fName);
+
 };
 
 // Iterpolations

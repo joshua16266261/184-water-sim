@@ -3,6 +3,7 @@
 #include <random>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #include "fluid.h"
 #include "particle.h"
@@ -352,5 +353,31 @@ Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double v
 
     return n;
 }
+
+void marchingCube::triToObj(string fName) {
+    ofstream file;
+    file.open(fName + ".obj");
+    for (auto& tri : tri_Vector) {
+        // Add Vertices  and Normalsto the OBJ file
+        for (int i = 0; i < 3; i++) {
+            Vector3D vert = tri.coordinates[i];
+            string pos = "v " + to_string(vert.x) + " " + to_string(vert.y) + " " + to_string(vert.z);
+            file << pos;
+        }
+        for (int i = 0; i < 3; i++) {
+            Vector3D normal = tri.normal[i];
+            string norm = "vn " + to_string(normal.x) + " " + to_string(normal.y) + " " + to_string(normal.z);
+            file << norm;
+        }
+    }
+    //Add the faces
+    int idx = 1;
+    for (auto& tri : tri_Vector) {
+        string face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
+        file << face;
+        idx += 3;
+    }
+}
+
 
 
