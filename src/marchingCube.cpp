@@ -358,18 +358,24 @@ void marchingCube::triToObj(string fName) {
     ofstream file;
     file.open(fName + ".obj");
     for (auto& tri : tri_Vector) {
-        // Add Vertices  and Normalsto the OBJ file
+        // Add Vertices to the OBJ file
         for (int i = 0; i < 3; i++) {
             Vector3D vert = tri.coordinates[i];
             string pos = "v " + to_string(vert.x) + " " + to_string(vert.y) + " " + to_string(vert.z);
             file << pos;
         }
+        
+    }
+
+    for (auto& tri : tri_Vector) {
+        // Add Normals to the OBJ file
         for (int i = 0; i < 3; i++) {
             Vector3D normal = tri.normal[i];
             string norm = "vn " + to_string(normal.x) + " " + to_string(normal.y) + " " + to_string(normal.z);
             file << norm;
         }
     }
+
     //Add the faces
     int idx = 1;
     for (auto& tri : tri_Vector) {
