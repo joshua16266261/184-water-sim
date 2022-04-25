@@ -42,7 +42,7 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
 m_box_dimensions = box_dimensions;
 m_unit_cube = unit_cube;
 // m_particles is outside of the object for this function to work
-//m_particles = particles;
+m_particles = particles;
 m_hash_to_particles = hash_to_particles;
 m_h = h;
 m_isovalue = isovalue;
@@ -58,7 +58,7 @@ m_density = density;
 
 vector<newTriangle> tri_Vector = vector<newTriangle>();
 vector<Cube> cube_Vector = vector<Cube>();
-vector<Particle> m_particles = vector<Particle>();
+//vector<Particle> m_particles = vector<Particle>();
 
 // Slice up the main box into cubes
 // we need to use the create cube function to input 
@@ -67,7 +67,7 @@ vector<Particle> m_particles = vector<Particle>();
 //////////////////////
 // TEST CODE//
 /////////////////////
-
+/*
 float x, y, z;
 for (int depth = 0; depth < 10; depth++) {
     z = depth * 10 / (10 - 1);
@@ -79,11 +79,11 @@ for (int depth = 0; depth < 10; depth++) {
         }
     }
 }
-
+*/
 // NOW m_particles holdsall the particles
 
 
-
+/*
 // The number of times we iterate through each dimension (l,w,h)
 Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / m_unit_cube.x), ceil(box_dimensions.y / m_unit_cube.y),
     ceil(box_dimensions.z / m_unit_cube.z));
@@ -102,6 +102,7 @@ for (int i = 0; i < iter_dimensions.x; i++) {
         }
     }
 }
+*/
 }
 
 void marchingCube::main_March() {
