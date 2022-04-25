@@ -71,7 +71,7 @@ struct marchingCube {
 
 
     // The main march
-    void marchingCube::main_March();
+    void marchingCube::main_March(string filename);
 
     // The isotropic kernel function and isovalue function
     float isotropic_kernel(Vector3D r, float h);

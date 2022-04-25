@@ -18,13 +18,13 @@ int main(int argc, char **argv) {
 	Vector3D bDim = Vector3D(10., 10., 10.);
 	Vector3D unitDim = Vector3D(1., 1., 1.);
 	float h = 1.;
-	float search_radius = 0.5;
+	float search_radius = 1.;
 	float particle_mass = 1.;
 	float density = 1.;
-	float isovalue = 800.;
+	float isovalue = 1.;
 
 	marchingCube* m = new marchingCube(bDim, unitDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue);
-	//m->main_March();
+	m->main_March("test.obj");
 
   return 0;
 }

@@ -56,8 +56,8 @@ m_density = density;
 // tri_Vector = new Vector<Triangle>();
 ///
 
-vector<newTriangle> tri_Vector = vector<newTriangle>();
-vector<Cube> cube_Vector = vector<Cube>();
+//vector<newTriangle> tri_Vector = vector<newTriangle>();
+//vector<Cube> cube_Vector = vector<Cube>();
 //vector<Particle> m_particles = vector<Particle>();
 
 // Slice up the main box into cubes
@@ -83,7 +83,7 @@ for (int depth = 0; depth < 10; depth++) {
 // NOW m_particles holdsall the particles
 
 
-/*
+
 // The number of times we iterate through each dimension (l,w,h)
 Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / m_unit_cube.x), ceil(box_dimensions.y / m_unit_cube.y),
     ceil(box_dimensions.z / m_unit_cube.z));
@@ -98,25 +98,24 @@ for (int i = 0; i < iter_dimensions.x; i++) {
             Vector3D index = Vector3D(i, j, k);
             createCube(marchCube, index);
             cube_Vector.emplace_back(marchCube);
-
+           
         }
     }
 }
-*/
+
 }
 
-void marchingCube::main_March() {
-        // we have the marching cube vector now just iterate over the list and 
-    for (const Cube &singleCube : cube_Vector) {
-
+void marchingCube::main_March(string filename) {
+    // we have the marching cube vector now just iterate over the list and 
+    for (auto q = begin(cube_Vector); q != end(cube_Vector); q++) {
         // is this how we init a new array of triangles???
         newTriangle *triangleHolder;
-        Polygonise(singleCube, m_isovalue);
+        Polygonise(*q, m_isovalue);
 
     }
     // will call the file.obj function in the main function btw and not here
-    string filename = "test";
     triToObj(filename);
+    cout << "Written OBJ File";
 }
 
 
@@ -137,10 +136,21 @@ float marchingCube::isovalue(Vector3D pos, float h) {
     // Hash the position vector
     // Find particles that are neighboring
     // Check for particles that are in specific radius
-    string vortex_key = hash_position(pos, h);
+    //string vortex_key = hash_position(pos, h);
+    //cout << m_hash_to_particles;
+    /*
     for (auto q = begin(*(m_hash_to_particles[vortex_key])); q != end(*(m_hash_to_particles[vortex_key])); q++) {
-        if ((pos - (*q)->position).norm() <= m_search_radius) {
+        
+        if ((pos - (*q)->position).norm() ) {
             rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+        }
+       
+    }
+    */
+
+    for (auto q = begin(m_particles); q != end(m_particles); q++) {
+        if ((pos - q->position).norm() <= m_search_radius) {
+            rho += m_particle_mass * isotropic_kernel(pos - q->position, h);
         }
     }
     return rho;
@@ -219,7 +229,7 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     cube.normals[5] = cube.vertices[5] - (cube.vertices[5] - cube.vertices[3]).unit();
     cube.normals[6] = cube.vertices[6] - (cube.vertices[6] - cube.vertices[0]).unit();
     cube.normals[7] = cube.vertices[7] - (cube.vertices[7] - cube.vertices[1]).unit();
-
+    
     // Assign the isovalue for each cube verticie 
     for (int i = 0; i < 8; i++) {
         cube.isovalues[i] = isovalue(cube.vertices[i], m_h);
@@ -247,6 +257,7 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
 // THIS IS WHERE WE FILL IN THE TRIANGLES WHERE WE WILL USE IT TO FILL IN THE RASTERIZER
 // This code is modified btw
 int marchingCube::Polygonise(Cube cube, double isolevel) {
+
     int i, ntriang;
     int cubeindex;
     Vector3D vertlist[12];
@@ -344,8 +355,8 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
     // but later on we should place the list of triangles we passed in onto a triangle vector
     //
     ntriang = 0;
+    
     for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
-
         // We will initate a new triangle for each look and then will emplace it back every time
         newTriangle triangles = newTriangle();
         triangles.coordinates[0] = vertlist[triTable[cubeindex][i]];
@@ -410,16 +421,18 @@ Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double v
 }
 
 void marchingCube::triToObj(string fName) {
-    ofstream file;
-    file.open(fName + ".obj");
+    ofstream ofile;
+    ofile.open(fName);
+    if (ofile.is_open()) {
+        cout << "Open Success" << "\n";
+    }
     for (auto& tri : tri_Vector) {
         // Add Vertices to the OBJ file
         for (int i = 0; i < 3; i++) {
             Vector3D vert = tri.coordinates[i];
             string pos = "v " + to_string(vert.x) + " " + to_string(vert.y) + " " + to_string(vert.z);
-            file << pos;
+            ofile << pos << "\n";
         }
-        
     }
 
     for (auto& tri : tri_Vector) {
@@ -427,7 +440,7 @@ void marchingCube::triToObj(string fName) {
         for (int i = 0; i < 3; i++) {
             Vector3D normal = tri.normal[i];
             string norm = "vn " + to_string(normal.x) + " " + to_string(normal.y) + " " + to_string(normal.z);
-            file << norm;
+            ofile << norm << "\n";
         }
     }
 
@@ -435,9 +448,10 @@ void marchingCube::triToObj(string fName) {
     int idx = 1;
     for (auto& tri : tri_Vector) {
         string face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
-        file << face;
+        ofile << face << "\n";
         idx += 3;
     }
+    ofile.close();
 }
 
 
