@@ -27,9 +27,12 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
  float density, float isovalue) {
 
 // init variables to use in this files functions
+
+// CHANGE FOR TESTING PURPOSES
 m_box_dimensions = box_dimensions;
 m_unit_cube = unit_cube;
-m_particles = particles;
+// m_particles is outside of the object for this function to work
+// m_particles = vector<Particle>();
 m_hash_to_particles = hash_to_particles;
 m_h = h;
 m_isovalue = isovalue;
@@ -42,12 +45,32 @@ m_density = density;
 // delete(tri_vector);
 // tri_Vector = new Vector<Triangle>();
 ///
+
 vector<newTriangle> tri_Vector = vector<newTriangle>();
 vector<Cube> cube_Vector = vector<Cube>();
 
 // Slice up the main box into cubes
 // we need to use the create cube function to input 
 // and then we just throw our cube into a vector of cubes
+
+//////////////////////
+// TEST CODE//
+/////////////////////
+float x, y, z;
+for (int depth = 0; depth < 10; depth++) {
+    z = depth * 10 / (10 - 1);
+    for (int row = 0; row < 10; row++) {
+        y = row * 10 / (10 - 1);
+        for (int col = 0; col < 10; col++) {
+            x = col * 10 / (10 - 1);
+            m_particles.emplace_back(Particle(Vector3D(x, y, z)));
+        }
+    }
+}
+
+// NOW m_particles holdsall the particles
+
+
 
 // The number of times we iterate through each dimension (l,w,h)
 Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / m_unit_cube.x), ceil(box_dimensions.y / m_unit_cube.y),
@@ -68,6 +91,20 @@ for (int i = 0; i < iter_dimensions.x; i++) {
     }
 }
 }
+
+void marchingCube::main_March() {
+        // we have the marching cube vector now just iterate over the list and 
+    for (const Cube &singleCube : cube_Vector) {
+
+        // is this how we init a new array of triangles???
+        newTriangle *triangleHolder;
+        Polygonise(singleCube, m_isovalue);
+
+    }
+    // will call the file.obj function in the main function btw and not here
+}
+
+
 
 // r is the vector from particle to position p
 float marchingCube::isotropic_kernel(Vector3D r, float h) {
@@ -194,7 +231,7 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
 // The triangles is just a empty list of triangles you pass in to have it filled,
 // THIS IS WHERE WE FILL IN THE TRIANGLES WHERE WE WILL USE IT TO FILL IN THE RASTERIZER
 // This code is modified btw
-int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles) {
+int marchingCube::Polygonise(Cube cube, double isolevel) {
     int i, ntriang;
     int cubeindex;
     Vector3D vertlist[12];
@@ -293,16 +330,19 @@ int marchingCube::Polygonise(Cube cube, double isolevel, newTriangle* triangles)
     //
     ntriang = 0;
     for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
-        triangles[ntriang].coordinates[0] = vertlist[triTable[cubeindex][i]];
-        triangles[ntriang].coordinates[1] = vertlist[triTable[cubeindex][i + 1]];
-        triangles[ntriang].coordinates[2] = vertlist[triTable[cubeindex][i + 2]];
 
-        triangles[ntriang].normal[0] = normlist[triTable[cubeindex][i + 2]];
-        triangles[ntriang].normal[1] = normlist[triTable[cubeindex][i + 2]];
-        triangles[ntriang].normal[2] = normlist[triTable[cubeindex][i + 2]];
+        // We will initate a new triangle for each look and then will emplace it back every time
+        newTriangle triangles = newTriangle();
+        triangles.coordinates[0] = vertlist[triTable[cubeindex][i]];
+        triangles.coordinates[1] = vertlist[triTable[cubeindex][i + 1]];
+        triangles.coordinates[2] = vertlist[triTable[cubeindex][i + 2]];
+
+        triangles.normal[0] = normlist[triTable[cubeindex][i + 2]];
+        triangles.normal[1] = normlist[triTable[cubeindex][i + 2]];
+        triangles.normal[2] = normlist[triTable[cubeindex][i + 2]];
 
         // THIS IS THE VECTOR WE GET ALL OUR TRIANGLES WE WANT TO RASTERIZE INTO 3D FROM
-        tri_Vector.emplace_back(triangles[ntriang]);
+        tri_Vector.emplace_back(triangles);
         ntriang++;
     }
 
