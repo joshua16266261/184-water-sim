@@ -18,8 +18,9 @@ Fluid::Fluid(double length, double width, double height, int num_length_particle
   this->num_length_particles = num_length_particles;
   this->num_width_particles = num_width_particles;
   this->num_height_particles = num_height_particles;
-
-  buildGrid();
+	
+	particles.clear();
+	buildGrid();
 }
 
 Fluid::~Fluid() {
@@ -49,6 +50,7 @@ void Fluid::buildGrid() {
 }
 
 void Fluid::set_neighbors(Particle *p, double h) {
+	// Get all particles distance h or less away and put them in p->neighbors
 	string key = hash_position(p->position, h);
 	(p->neighbors)->clear();
 	
@@ -80,16 +82,106 @@ void Fluid::set_neighbors(Particle *p, double h) {
 	}
 }
 
-double Fluid::get_avg_spacing() {
-	//TODO: Set fp->h based on 3 times average particle spacing
-//	build_spatial_map(<#double h#>)
+void Fluid::calculate_lambda(Particle *p, double mass, double density, double h, double relaxation) {
+	// Calculate p->lambda as given in Equation 9
 	
-	double spacing = 0;
-	for (auto p = begin(particles); p != end(particles); p++) {
-		
+	if (p->neighbors->size() == 0) {
+		p->lambda = 0;
+		return;
 	}
+	// Calculate C_i
+	double rho_i = 0;
+	for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
+		rho_i += poly6_kernel(p->position - (*q)->position, h);
+	}
+	rho_i *= mass;
 	
-	return 0;
+	double C_i = rho_i / density - 1;
+	
+	Vector3D pi_term = Vector3D();
+	double not_pi_term = 0;
+	for (auto pj = begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
+		Vector3D r = p->position - (*pj)->position;
+		Vector3D grad_j = grad_spiky_kernel(r, h);
+
+		pi_term += grad_j;
+		not_pi_term += grad_j.norm2();
+	}
+	double denom = 1.0 / pow(density, 2) * (pi_term.norm2() + not_pi_term);
+	
+	p->lambda = -C_i / (denom + relaxation);
+}
+
+void Fluid::calculate_delta_p(Particle *p, double h, Vector3D delta_q, double k, double n, double density) {
+	// Calculate p->delta_p as given in Equation 14
+	
+	Vector3D delta_p = Vector3D();
+	for (auto pj= begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
+		Vector3D r = p->position - (*pj)->position;
+		Vector3D grad_j = grad_spiky_kernel(r, h);
+		
+		double numer = poly6_kernel(r, h);
+		double denom = poly6_kernel(delta_q, h);
+		double s_corr = -k * pow(numer / denom, n);
+		
+		delta_p += (p->lambda + (*pj)->lambda + s_corr) * grad_j;
+	}
+	delta_p *= 1.0 / density;
+	p->delta_p = delta_p;
+}
+
+void Fluid::collision_detection(Particle *p, vector<CollisionObject *> *collision_objects, double cr, double delta_t) {
+	// Set p->temp_velocity
+	// If p collides with any objects, modify p->delta_p and p->temp_velocity
+	
+	for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
+		p->temp_velocity = (p->position + p->delta_p - p->last_position) / delta_t;
+		(*o)->collide(*p, cr, delta_t);
+	}
+}
+
+void Fluid::calculate_omega(Particle *p, double h) {
+	// Calculate p->omega as given in Equation 15
+	
+	p->omega = Vector3D();
+
+	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+		Vector3D v_ij = (*pj)->velocity - p->velocity;
+		//TODO: Remove negative sign of grad
+		p->omega += cross(v_ij, grad_spiky_kernel(p->position - (*pj)->position, h));
+	}
+}
+
+void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_eps, double mass) {
+	// Calculate vorticity force on p as given in Equation 16 and apply it to p->temp_velocity
+	
+	Vector3D N = Vector3D();
+	
+	if (p->omega.norm() > EPS_F) {
+		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+			//FIXME: Chain rule??
+			Vector3D r = (*pj)->position - p->position;
+//			double d_omega = ((*pj)->omega - p->omega).norm();
+//			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+
+			N += (*pj)->omega.norm() * grad_spiky_kernel(-r, h); // (pi-j->x_star)
+		}
+
+		if (N.norm() > EPS_F) {
+			N.normalize();
+		}
+	}
+
+	p->temp_velocity += delta_t * vorticity_eps * cross(N, p->omega) / mass;
+}
+
+void Fluid::viscosity(Particle *p, double c, double h) {
+	// Update p->temp_velocity with viscosity as given in Equation 17
+	
+	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+		Vector3D v_ij = (*pj)->velocity - p->velocity;
+		p->temp_velocity += c * v_ij * poly6_kernel((*pj)->position - p->position, h);
+	}
 }
 
 void Fluid::simulate(FluidParameters *fp,
@@ -129,63 +221,17 @@ void Fluid::simulate(FluidParameters *fp,
 		#pragma omp parallel for
 		for (auto p = begin(particles); p != end(particles); p++) {
 			// Calculate lambda_i (line 10 of Algorithm 1)
-			
-			if (p->neighbors->size() == 0) {
-				p->lambda = 0;
-				continue;
-			}
-			// Calculate C_i
-			double rho_i = 0;
-			for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
-				rho_i += poly6_kernel(p->position - (*q)->position, fp->h);
-			}
-			rho_i *= mass;
-			
-			double C_i = rho_i / fp->density - 1;
-			
-			//FIXME: Jello
-			Vector3D pi_term = Vector3D();
-			double not_pi_term = 0;
-			for (auto pj = begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
-				Vector3D r = p->position - (*pj)->position;
-				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
-
-				pi_term += grad_j;
-				not_pi_term += grad_j.norm2();
-			}
-			double denom = 1.0 / pow(fp->density, 2) * (pi_term.norm2() + not_pi_term);
-			
-			p->lambda = -C_i / (denom + fp->relaxation);
+			calculate_lambda(&*p, mass, fp->density, fp->h, fp->relaxation);
 		}
-		
 		
 		// Line 12 of Algorithm 1
 		#pragma omp parallel for
 		for (auto p = begin(particles); p != end(particles); p++) {
 			// Calculate delta pi (line 13 of Algorithm 1)
-			Vector3D delta_p = Vector3D();
-			for (auto pj= begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
-				Vector3D r = p->position - (*pj)->position;
-				Vector3D grad_j = grad_spiky_kernel(r, fp->h);
-				
-//				double numer = M4_kernel(r, fp->h);
-//				double denom = M4_kernel(fp->delta_q, fp->h);
-				double numer = poly6_kernel(r, fp->h);
-				double denom = poly6_kernel(fp->delta_q, fp->h);
-
-				
-				double s_corr = -fp->k * pow(numer / denom, fp->n);
-				
-				delta_p += (p->lambda + (*pj)->lambda + s_corr) * grad_j;
-			}
-			delta_p *= 1.0 / fp->density;
+			calculate_delta_p(&*p, fp->h, fp->delta_q, fp->k, fp->n, fp->density);
 			
 			// Collision detection and response (line 14 of Algorithm 1)
-			p->delta_p = delta_p;
-			for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
-				p->temp_velocity = (p->position + p->delta_p - p->last_position) / delta_t;
-				(*o)->collide(*p, fp->cr, delta_t);
-			}
+			collision_detection(&*p, collision_objects, fp->cr, delta_t);
 		}
 		
 		// Line 16 of Algorithm 1
@@ -193,54 +239,73 @@ void Fluid::simulate(FluidParameters *fp,
 		for (auto p = begin(particles); p != end(particles); p++) {
 			// Update position (line 17 of Algorithm 1)
 			p->position += p->delta_p;
-//			p->temp_velocity = (p->position - p->last_position) / delta_t;
 		}
 		
     }
 	
+//	#pragma omp parallel for
+//	for (auto p = begin(particles); p != end(particles); p++) {
+//		viscosity(&*p, fp->c, fp->h);
+//	}
+//
+//	#pragma omp parallel for
+//	for (auto p = begin(particles); p != end(particles); p++) {
+//		calculate_omega(&*p, fp->h);
+//	}
+//
+//	#pragma omp parallel for
+//	for (auto p = begin(particles); p != end(particles); p++) {
+//		vorticity(&*p, fp->h, delta_t, fp->vorticity_eps, mass);
+//	}
+	
+	
+	
+	
+	
 //	 Vorticity (line 22 of Algorithm 1)
-	#pragma omp parallel for
-	for (auto p = begin(particles); p != end(particles); p++) {
-		p->omega = Vector3D();
-
-		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-			Vector3D v_ij = (*pj)->velocity - p->velocity;
-			//TODO: Remove negative sign of grad
-			p->omega += cross(v_ij, -grad_spiky_kernel(p->position - (*pj)->position, fp->h));
-
-			// Viscosity
-//			p->temp_velocity += fp->c * v_ij * M4_kernel((*pj)->position - p->position, fp->h);
-			p->temp_velocity += fp->c * v_ij * poly6_kernel((*pj)->position - p->position, fp->h);
-		}
-	}
-
-	#pragma omp parallel for
-	for (auto p = begin(particles); p != end(particles); p++) {
-		Vector3D N = Vector3D();
-
-		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-			//FIXME: Chain rule??
-			double d_omega = ((*pj)->omega - p->omega).norm();
-			Vector3D r= (*pj)->position - p->position;
-			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
-			
-			
-			// N += (j->omega).norm() * del_W(pi-j->x_star)
-		}
-
-		if (N.norm() > EPS_F) {
-			N.normalize();
-		}
-
-		p->temp_velocity += delta_t * fp->vorticity_eps * cross(N, p->omega) / mass;
-	}
+//	#pragma omp parallel for
+//	for (auto p = begin(particles); p != end(particles); p++) {
+//		p->omega = Vector3D();
+//
+//		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+//			Vector3D v_ij = (*pj)->velocity - p->velocity;
+//			//TODO: Remove negative sign of grad
+//			p->omega += cross(v_ij, grad_spiky_kernel(p->position - (*pj)->position, fp->h));
+//
+//			// Viscosity
+////			p->temp_velocity += fp->c * v_ij * M4_kernel((*pj)->position - p->position, fp->h);
+////			p->temp_velocity += fp->c * v_ij * poly6_kernel((*pj)->position - p->position, fp->h);
+//		}
+//	}
+//
+//	#pragma omp parallel for
+//	for (auto p = begin(particles); p != end(particles); p++) {
+//		Vector3D N = Vector3D();
+//
+//		if (p->omega.norm() > EPS_F) {
+//			for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
+//				//FIXME: Chain rule??
+//				Vector3D r= (*pj)->position - p->position;
+//	//			double d_omega = ((*pj)->omega - p->omega).norm();
+//	//			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+//
+//
+//				N += (*pj)->omega.norm() * grad_spiky_kernel(-r, fp->h);
+//	//			(pi-j->x_star)
+//			}
+//
+//			if (N.norm() > EPS_F) {
+//				N.normalize();
+//			}
+//		}
+//
+////		p->temp_velocity += delta_t * fp->vorticity_eps * cross(N, p->omega) / mass;
+//	}
 	
 	#pragma omp parallel for
 	for (auto p = begin(particles); p != end(particles); p++) {
 		p->velocity = p->temp_velocity;
 	}
-	
-	frame++;
 }
 
 void Fluid::build_spatial_map(double h) {

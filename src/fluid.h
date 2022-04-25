@@ -58,11 +58,24 @@ struct Fluid {
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects);
 
-  void build_spatial_map(double h);
-  string hash_position(Vector3D pos, double h);
+	void build_spatial_map(double h);
+	
+	string hash_position(Vector3D pos, double h);
 	
 	void set_neighbors(Particle *p, double h);
 	double get_avg_spacing();
+	
+	void calculate_lambda(Particle *p, double mass, double density, double h, double relaxation);
+	
+	void calculate_delta_p(Particle *p, double h, Vector3D delta_q, double k, double n, double density);
+	
+	void collision_detection(Particle *p, vector<CollisionObject *> *collision_objects, double cr, double delta_t);
+	
+	void calculate_omega(Particle *p, double h);
+	
+	void vorticity(Particle *p, double h, double delta_t, double vorticity_eps, double mass);
+	
+	void viscosity(Particle *p, double c, double h);
 	
 	double poly6_kernel(Vector3D r, double h) {
 		if (r.norm() > h) {
@@ -75,21 +88,20 @@ struct Fluid {
 		if (r.norm() > h) {
 			return Vector3D();
 		}
-//		std::cout << "r" << r << "rnorm" << r.norm() << "numer" << pow(h - r.norm(), 2) << "denom" << PI * pow(h, 6) * r.norm() << "output" << -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2) << '\n';
 		return -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2);
 	}
 	
-	double M4_kernel(Vector3D r, double h) {
-		if (r.norm() > 2 * h) {
-			return 0;
-		}
-		double q = r.norm() / h;
-		if (q < 1) {
-			return 10.0 / (7 * PI * pow(h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
-		} else if (q < 2) {
-			return 10.0 / (28 * PI * pow(h, 2)) * pow(2 - q, 3);
-		}
-	}
+//	double M4_kernel(Vector3D r, double h) {
+//		if (r.norm() > 2 * h) {
+//			return 0;
+//		}
+//		double q = r.norm() / h;
+//		if (q < 1) {
+//			return 10.0 / (7 * PI * pow(h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
+//		} else if (q < 2) {
+//			return 10.0 / (28 * PI * pow(h, 2)) * pow(2 - q, 3);
+//		}
+//	}
 
   // Fluid properties
   double length;
@@ -98,7 +110,6 @@ struct Fluid {
   int num_length_particles;
   int num_width_particles;
   int num_height_particles;
-	int frame;
 
   // Fluid components
   vector<Particle> particles;

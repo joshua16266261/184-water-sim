@@ -18,8 +18,8 @@ void write_pos_to_file(Fluid *f, string filename) {
 }
 
 int main(int argc, char **argv) {
+	//TODO: Make sure that parameters still work with different cube sizes
 	Fluid *f = new Fluid(2, 2, 2, 20, 20, 20);
-	f->frame = 0;
 	
 	FluidParameters *fp = new FluidParameters(EPS_F, 2, 60, 5);
 	fp->h = 0.15;
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 	fp->density = 1000;
 	fp->k = 0.001;
 	fp->c = 0.00025;
-	fp->vorticity_eps = 0.005;
+	fp->vorticity_eps = 0.0005;
 	fp->relaxation = 5000;
 	
 	Vector3D g = Vector3D(0, 0, -9.81);
@@ -40,7 +40,6 @@ int main(int argc, char **argv) {
 	Plane *back_wall = new Plane(Vector3D(0, 3, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject *> collision = vector<CollisionObject *>{floor, left_wall, right_wall, front_wall, back_wall};
 	
-//	int frame = 0;
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
