@@ -12,5 +12,9 @@ int main(int argc, char **argv) {
 		std::cout << p->position << '\n';
 	}
 
+	// Call the constructor to creat marchingCube object
+	marchingCube* m = new marchingCube();
+	m->main_March();
+
   return 0;
 }

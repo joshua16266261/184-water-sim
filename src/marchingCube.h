@@ -30,11 +30,20 @@ public:
 /////////////////////////////////
 // TEST CASE FOR MARCHING CUBES//
 // Fluid components
-vector<Particle> m_particles;
+//vector<Particle> m_particles;
 // TEST CASE FOR MARCHING CUBES//
 /////////////////////////////////
 
 struct marchingCube {
+    // Default Constructor (does nothing) just for Build Test
+    marchingCube();
+
+    //Constructor for Marching Cube Object
+    marchingCube(Vector3D box_dimensions, Vector3D unit_cube,
+        vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
+        float h, float search_radius, float particle_mass,
+        float density, float isovalue);
+
 
     // The values passed into init
     float m_search_radius;
@@ -42,8 +51,8 @@ struct marchingCube {
     float m_density;
     float m_h;
     float m_isovalue;
-    vector<Particle>& m_particles;
-    unordered_map<string, vector<Particle*>*>& m_hash_to_particles;
+    vector<Particle> m_particles;
+    unordered_map<string, vector<Particle*>*> m_hash_to_particles;
     Vector3D m_unit_cube;
     Vector3D m_box_dimensions;
 

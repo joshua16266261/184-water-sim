@@ -14,6 +14,16 @@
 
 using namespace std;
 
+// Default Constructor just for build TEST not used
+marchingCube::marchingCube(){}
+
+// Marching Cube object constructor
+marchingCube::marchingCube(Vector3D box_dimensions, Vector3D unit_cube,
+    vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
+    float h, float search_radius, float particle_mass,
+    float density, float isovalue){
+    init(box_dimensions, unit_cube, particles, hash_to_particles, h,  search_radius,  particle_mass, density,  isovalue);
+}
 
 // Main grid starts from Vector3D(0,0,0) and ends at Vector3D(box_dimensions.xyz)
 // The list of particles just incase 
@@ -32,7 +42,7 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
 m_box_dimensions = box_dimensions;
 m_unit_cube = unit_cube;
 // m_particles is outside of the object for this function to work
-// m_particles = vector<Particle>();
+//m_particles = particles;
 m_hash_to_particles = hash_to_particles;
 m_h = h;
 m_isovalue = isovalue;
@@ -48,6 +58,7 @@ m_density = density;
 
 vector<newTriangle> tri_Vector = vector<newTriangle>();
 vector<Cube> cube_Vector = vector<Cube>();
+vector<Particle> m_particles = vector<Particle>();
 
 // Slice up the main box into cubes
 // we need to use the create cube function to input 
@@ -56,6 +67,7 @@ vector<Cube> cube_Vector = vector<Cube>();
 //////////////////////
 // TEST CODE//
 /////////////////////
+
 float x, y, z;
 for (int depth = 0; depth < 10; depth++) {
     z = depth * 10 / (10 - 1);
@@ -102,6 +114,8 @@ void marchingCube::main_March() {
 
     }
     // will call the file.obj function in the main function btw and not here
+    string filename = "test";
+    triToObj(filename);
 }
 
 
