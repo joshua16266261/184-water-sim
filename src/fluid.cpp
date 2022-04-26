@@ -148,7 +148,7 @@ void Fluid::calculate_omega(Particle *p, double h) {
 	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 		Vector3D v_ij = (*pj)->velocity - p->velocity;
 		//TODO: Remove negative sign of grad
-		p->omega += cross(v_ij, grad_spiky_kernel(p->position - (*pj)->position, h));
+		p->omega += cross(v_ij, -grad_spiky_kernel(p->position - (*pj)->position, h));
 	}
 }
 
@@ -161,10 +161,10 @@ void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_ep
 		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 			//FIXME: Chain rule??
 			Vector3D r = (*pj)->position - p->position;
-//			double d_omega = ((*pj)->omega - p->omega).norm();
-//			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+			double d_omega = (*pj)->omega.norm() - p->omega.norm();
+			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
 
-			N += (*pj)->omega.norm() * grad_spiky_kernel(-r, h); // (pi-j->x_star)
+//			N += (*pj)->omega.norm() * grad_spiky_kernel(-r, h); // (pi-j->x_star)
 		}
 
 		if (N.norm() > EPS_F) {
@@ -180,7 +180,7 @@ void Fluid::viscosity(Particle *p, double c, double h) {
 	
 	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 		Vector3D v_ij = (*pj)->velocity - p->velocity;
-		p->temp_velocity += c * v_ij * poly6_kernel((*pj)->position - p->position, h);
+		p->temp_velocity += c * v_ij * poly6_kernel(p->position - (*pj)->position, h);
 	}
 }
 
@@ -243,20 +243,20 @@ void Fluid::simulate(FluidParameters *fp,
 		
     }
 	
-//	#pragma omp parallel for
-//	for (auto p = begin(particles); p != end(particles); p++) {
-//		viscosity(&*p, fp->c, fp->h);
-//	}
-//
-//	#pragma omp parallel for
-//	for (auto p = begin(particles); p != end(particles); p++) {
-//		calculate_omega(&*p, fp->h);
-//	}
-//
-//	#pragma omp parallel for
-//	for (auto p = begin(particles); p != end(particles); p++) {
-//		vorticity(&*p, fp->h, delta_t, fp->vorticity_eps, mass);
-//	}
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		viscosity(&*p, fp->c, fp->h);
+	}
+
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		calculate_omega(&*p, fp->h);
+	}
+
+	#pragma omp parallel for
+	for (auto p = begin(particles); p != end(particles); p++) {
+		vorticity(&*p, fp->h, delta_t, fp->vorticity_eps, mass);
+	}
 	
 	
 	
