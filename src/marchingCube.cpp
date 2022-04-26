@@ -225,10 +225,10 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     cube.normals[1] = cube.vertices[1] - (cube.vertices[1] - cube.vertices[7]).unit();
     cube.normals[2] = cube.vertices[2] - (cube.vertices[2] - cube.vertices[4]).unit();
     cube.normals[3] = cube.vertices[3] - (cube.vertices[3] - cube.vertices[5]).unit();
-    cube.normals[4] = cube.vertices[4] - (cube.vertices[4] - cube.vertices[2]).unit();
-    cube.normals[5] = cube.vertices[5] - (cube.vertices[5] - cube.vertices[3]).unit();
-    cube.normals[6] = cube.vertices[6] - (cube.vertices[6] - cube.vertices[0]).unit();
-    cube.normals[7] = cube.vertices[7] - (cube.vertices[7] - cube.vertices[1]).unit();
+    cube.normals[4] = cube.vertices[4] + (cube.vertices[4] - cube.vertices[2]).unit();
+    cube.normals[5] = cube.vertices[5] + (cube.vertices[5] - cube.vertices[3]).unit();
+    cube.normals[6] = cube.vertices[6] + (cube.vertices[6] - cube.vertices[0]).unit();
+    cube.normals[7] = cube.vertices[7] + (cube.vertices[7] - cube.vertices[1]).unit();
     
     // Assign the isovalue for each cube verticie 
     for (int i = 0; i < 8; i++) {
@@ -268,6 +268,18 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
      tells us which vertices are inside of the surface
     */
     cubeindex = 0;
+    
+    /*cout << "CUBE ISOVALUES" << endl;
+    cout << cube.isovalues[0] << endl;
+    cout << cube.isovalues[1] << endl;
+    cout << cube.isovalues[2] << endl;
+    cout << cube.isovalues[3] << endl;
+    cout << cube.isovalues[4] << endl;
+    cout << cube.isovalues[5] << endl;
+    cout << cube.isovalues[6] << endl;
+    cout << cube.isovalues[7] << endl;
+    */
+
     if (cube.isovalues[0] < isolevel) cubeindex |= 1;
     if (cube.isovalues[1] < isolevel) cubeindex |= 2;
     if (cube.isovalues[2] < isolevel) cubeindex |= 4;
