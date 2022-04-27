@@ -90,18 +90,6 @@ struct Fluid {
 		}
 		return -r * 45.0 / (PI * pow(h, 6) * r.norm()) * pow(h - r.norm(), 2);
 	}
-	
-//	double M4_kernel(Vector3D r, double h) {
-//		if (r.norm() > 2 * h) {
-//			return 0;
-//		}
-//		double q = r.norm() / h;
-//		if (q < 1) {
-//			return 10.0 / (7 * PI * pow(h, 2)) * (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3));
-//		} else if (q < 2) {
-//			return 10.0 / (28 * PI * pow(h, 2)) * pow(2 - q, 3);
-//		}
-//	}
 
   // Fluid properties
   double length;

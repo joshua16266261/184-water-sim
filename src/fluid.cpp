@@ -84,7 +84,6 @@ void Fluid::set_neighbors(Particle *p, double h) {
 
 void Fluid::calculate_lambda(Particle *p, double mass, double density, double h, double relaxation) {
 	// Calculate p->lambda as given in Equation 9
-	
 	if (p->neighbors->size() == 0) {
 		p->lambda = 0;
 		return;
@@ -114,7 +113,6 @@ void Fluid::calculate_lambda(Particle *p, double mass, double density, double h,
 
 void Fluid::calculate_delta_p(Particle *p, double h, Vector3D delta_q, double k, double n, double density) {
 	// Calculate p->delta_p as given in Equation 14
-	
 	Vector3D delta_p = Vector3D();
 	for (auto pj= begin(*(p->neighbors)); pj != end(*(p->neighbors)); pj++) {
 		Vector3D r = p->position - (*pj)->position;
@@ -133,7 +131,6 @@ void Fluid::calculate_delta_p(Particle *p, double h, Vector3D delta_q, double k,
 void Fluid::collision_detection(Particle *p, vector<CollisionObject *> *collision_objects, double cr, double delta_t) {
 	// Set p->temp_velocity
 	// If p collides with any objects, modify p->delta_p and p->temp_velocity
-	
 	for (auto o = begin(*collision_objects); o != end(*collision_objects); o++) {
 		p->temp_velocity = (p->position + p->delta_p - p->last_position) / delta_t;
 		(*o)->collide(*p, cr, delta_t);
@@ -142,7 +139,6 @@ void Fluid::collision_detection(Particle *p, vector<CollisionObject *> *collisio
 
 void Fluid::calculate_omega(Particle *p, double h) {
 	// Calculate p->omega as given in Equation 15
-	
 	p->omega = Vector3D();
 
 	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
@@ -154,17 +150,13 @@ void Fluid::calculate_omega(Particle *p, double h) {
 
 void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_eps, double mass) {
 	// Calculate vorticity force on p as given in Equation 16 and apply it to p->temp_velocity
-	
 	Vector3D N = Vector3D();
 	
 	if (p->omega.norm() > EPS_F) {
 		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-			//FIXME: Chain rule??
 			Vector3D r = (*pj)->position - p->position;
 			double d_omega = (*pj)->omega.norm() - p->omega.norm();
 			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
-
-//			N += (*pj)->omega.norm() * grad_spiky_kernel(-r, h); // (pi-j->x_star)
 		}
 
 		if (N.norm() > EPS_F) {
@@ -177,7 +169,6 @@ void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_ep
 
 void Fluid::viscosity(Particle *p, double c, double h) {
 	// Update p->temp_velocity with viscosity as given in Equation 17
-	
 	for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 		Vector3D v_ij = (*pj)->velocity - p->velocity;
 		p->temp_velocity += c * v_ij * poly6_kernel(p->position - (*pj)->position, h);
@@ -188,7 +179,6 @@ void Fluid::simulate(FluidParameters *fp,
                 vector<Vector3D> external_accelerations,
                 vector<CollisionObject *> *collision_objects) {
     double mass = length * width * height * fp->density / num_length_particles / num_width_particles / num_height_particles;
-	mass = 1;
     double delta_t = 1.0 / fp->fps;
 	
     // Compute total force acting on each point mass.
@@ -257,50 +247,6 @@ void Fluid::simulate(FluidParameters *fp,
 	for (auto p = begin(particles); p != end(particles); p++) {
 		vorticity(&*p, fp->h, delta_t, fp->vorticity_eps, mass);
 	}
-	
-	
-	
-	
-	
-//	 Vorticity (line 22 of Algorithm 1)
-//	#pragma omp parallel for
-//	for (auto p = begin(particles); p != end(particles); p++) {
-//		p->omega = Vector3D();
-//
-//		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-//			Vector3D v_ij = (*pj)->velocity - p->velocity;
-//			//TODO: Remove negative sign of grad
-//			p->omega += cross(v_ij, grad_spiky_kernel(p->position - (*pj)->position, fp->h));
-//
-//			// Viscosity
-////			p->temp_velocity += fp->c * v_ij * M4_kernel((*pj)->position - p->position, fp->h);
-////			p->temp_velocity += fp->c * v_ij * poly6_kernel((*pj)->position - p->position, fp->h);
-//		}
-//	}
-//
-//	#pragma omp parallel for
-//	for (auto p = begin(particles); p != end(particles); p++) {
-//		Vector3D N = Vector3D();
-//
-//		if (p->omega.norm() > EPS_F) {
-//			for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
-//				//FIXME: Chain rule??
-//				Vector3D r= (*pj)->position - p->position;
-//	//			double d_omega = ((*pj)->omega - p->omega).norm();
-//	//			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
-//
-//
-//				N += (*pj)->omega.norm() * grad_spiky_kernel(-r, fp->h);
-//	//			(pi-j->x_star)
-//			}
-//
-//			if (N.norm() > EPS_F) {
-//				N.normalize();
-//			}
-//		}
-//
-////		p->temp_velocity += delta_t * fp->vorticity_eps * cross(N, p->omega) / mass;
-//	}
 	
 	#pragma omp parallel for
 	for (auto p = begin(particles); p != end(particles); p++) {
