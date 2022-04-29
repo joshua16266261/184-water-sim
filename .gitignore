@@ -1,5 +1,6 @@
 # Cruft
 .DS_Store
+src/.DS_Store
 
 # Visual Studio
 Win32/*

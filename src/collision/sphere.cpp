@@ -20,4 +20,8 @@ void Sphere::collide(Particle &p, double cr, double delta_t) {
 //	}
 }
 
+void Sphere::collide(DiffuseParticle &p) {
+    //TODO: Do
+}
+
 

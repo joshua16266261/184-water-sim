@@ -51,7 +51,7 @@ void Fluid::buildGrid() {
 
 void Fluid::set_neighbors(Particle *p, double h) {
 	// Get all particles distance h or less away and put them in p->neighbors
-	string key = hash_position(p->position, h);
+	string key = hash_position(p->position, h*2);
 	(p->neighbors)->clear();
 	
 	for (int i = -1; i < 2; i++) {
@@ -72,7 +72,7 @@ void Fluid::set_neighbors(Particle *p, double h) {
 				if (map.count(neighbor_key) > 0 && map[neighbor_key]->size() > 0) {
 					for (auto q = begin(*(map[neighbor_key])); q != end(*(map[neighbor_key])); q++) {
 						double dist = (p->position - (*q)->position).norm();
-						if (dist <= h && dist > 0) {
+						if (dist <= h*2 && dist > 0) {
 							(p->neighbors)->emplace_back(*q);
 						}
 					}
@@ -155,8 +155,10 @@ void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_ep
 	if (p->omega.norm() > EPS_F) {
 		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 			Vector3D r = (*pj)->position - p->position;
-			double d_omega = (*pj)->omega.norm() - p->omega.norm();
-			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+            if (r.norm() <= h) {
+                double d_omega = (*pj)->omega.norm() - p->omega.norm();
+                N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+            }
 		}
 
 		if (N.norm() > EPS_F) {
@@ -262,7 +264,7 @@ void Fluid::build_spatial_map(double h) {
 
     // Build a spatial map out of all of the particles
 	for (auto p = begin(particles); p != end(particles); p++) {
-		string key = hash_position(p->position, h);
+		string key = hash_position(p->position, h * 2);
 		if (map.count(key) > 0) {
 			map[key]->emplace_back(&*p);
 		} else {

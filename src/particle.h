@@ -32,4 +32,5 @@ struct Particle {
 	Vector3D forces;
 };
 
+
 #endif /* PARTICLE_H */
