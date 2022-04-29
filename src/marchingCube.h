@@ -39,7 +39,7 @@ struct marchingCube {
     marchingCube();
 
     //Constructor for Marching Cube Object
-    marchingCube(Vector3D box_dimensions, Vector3D unit_cube,
+    marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions,
         vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
         float h, float search_radius, float particle_mass,
         float density, float isovalue);
@@ -54,9 +54,9 @@ struct marchingCube {
     float box_hash_size;
     vector<Particle> m_particles;
     unordered_map<string, vector<Particle*>*> m_hash_to_particles;
-    Vector3D m_unit_cube;
+    Vector3D m_particle_dimensions;
     Vector3D m_box_dimensions;
-
+    Vector3D m_unit_dimensions;
 
     // The vector of cubes where we keep cubes w/ emplace
     vector<Cube> cube_Vector;
@@ -65,7 +65,7 @@ struct marchingCube {
     vector<newTriangle> tri_Vector;
 
     // The initiation function
-    void init(Vector3D box_dimensions, Vector3D unit_cube,
+    void init(Vector3D box_dimensions, Vector3D particle_dimensions,
         vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
         float h, float search_radius, float particle_mass,
         float density, float isovalue);

@@ -6,7 +6,7 @@ using namespace std;
 
 int main(int argc, char **argv) {
 	// Just testing build
-	Fluid *f = new Fluid(30, 30, 30, 50, 50, 50);
+	Fluid *f = new Fluid(4, 4, 4, 40, 40, 40);
 	//Fluid* f = new Fluid(10, 10, 10, 10, 10, 10);
 	f->buildGrid();
 	f->build_spatial_map(1.);
@@ -18,15 +18,15 @@ int main(int argc, char **argv) {
 	*/
 
 	// Call the constructor to creat marchingCube object
-	Vector3D bDim = Vector3D(30., 30, 30);
-	Vector3D unitDim = Vector3D(1., 1., 1.);
+	Vector3D bDim = Vector3D(4., 4., 4.);
+	Vector3D partDim = Vector3D(40., 40., 40.);
 	float h = 1.;
-	float search_radius = 1.;
-	float particle_mass = 10.;
+	float search_radius = 1.0;
+	float particle_mass = 1.;
 	float density = 1.;
-	float isovalue = 8.;
+	float isovalue = 0.1;
 
-	marchingCube* m = new marchingCube(bDim, unitDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue);
+	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue);
 	m->main_March("test.obj");
 
   return 0;

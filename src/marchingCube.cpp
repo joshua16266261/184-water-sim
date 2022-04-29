@@ -22,34 +22,24 @@ using namespace std;
 marchingCube::marchingCube(){}
 
 // Marching Cube object constructor
-marchingCube::marchingCube(Vector3D box_dimensions, Vector3D unit_cube,
+marchingCube::marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions,
     vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
     float h, float search_radius, float particle_mass,
     float density, float isovalue){
-    init(box_dimensions, unit_cube, particles, hash_to_particles, h,  search_radius,  particle_mass, density,  isovalue);
+    init(box_dimensions, particle_dimensions, particles, hash_to_particles, h,  search_radius,  particle_mass, density, isovalue);
 }
 
-// Main grid starts from Vector3D(0,0,0) and ends at Vector3D(box_dimensions.xyz)
-// The list of particles just incase 
-// The hashmap of string to list particles within the same box
-// Cube dimensions we want: ex: box_dim = (9,9,9), cube_dim = (3,3,3) so (27 in total since 9/3 ^ 3)
-// search_radius, mass, h, and other variables
 
-
-
-void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
+// Initializer function
+void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
  vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
  float h, float search_radius, float particle_mass, 
  float density, float isovalue) {
 
-// init variables to use in this files functions
 
-// CHANGE FOR TESTING PURPOSES
 m_box_dimensions = box_dimensions;
-m_unit_cube = unit_cube;
-// m_particles is outside of the object for this function to work
+m_particle_dimensions = particle_dimensions;
 m_particles = particles;
-//m_hash_to_particles = hash_to_particles;
 m_h = h;
 m_isovalue = isovalue;
 m_search_radius = search_radius;
@@ -58,38 +48,10 @@ m_density = density;
 
 // This variable set the size of the box hash used to speedup
 box_hash_size = 2.;
-// RESET vector of triangles and then re-make it
-// do we need to do this????
-// delete(tri_vector);
-// tri_Vector = new Vector<Triangle>();
-///
 
-//vector<newTriangle> tri_Vector = vector<newTriangle>();
-//vector<Cube> cube_Vector = vector<Cube>();
-//vector<Particle> m_particles = vector<Particle>();
 
-// Slice up the main box into cubes
-// we need to use the create cube function to input 
-// and then we just throw our cube into a vector of cubes
-
-//////////////////////
-// TEST CODE//
-/////////////////////
-/*
-float x, y, z;
-for (int depth = 0; depth < 10; depth++) {
-    z = depth * 10 / (10 - 1);
-    for (int row = 0; row < 10; row++) {
-        y = row * 10 / (10 - 1);
-        for (int col = 0; col < 10; col++) {
-            x = col * 10 / (10 - 1);
-            m_particles.emplace_back(Particle(Vector3D(x, y, z)));
-        }
-    }
-}
-*/
 // Build the Initial Hash Table
-cout << particles.size();
+// cout << particles.size();
 for (auto p = begin(particles); p != end(particles); p++) {
     string key = hash_position(p->position, box_hash_size);
     //cout << p->position;
@@ -104,21 +66,46 @@ for (auto p = begin(particles); p != end(particles); p++) {
 }
 
 
-// The number of times we iterate through each dimension (l,w,h)
-Vector3D iter_dimensions = Vector3D(ceil(box_dimensions.x / m_unit_cube.x), ceil(box_dimensions.y / m_unit_cube.y),
-    ceil(box_dimensions.z / m_unit_cube.z));
+// Sets the unit lwh
+m_unit_dimensions = Vector3D(box_dimensions.x / (m_particle_dimensions.x - 1),
+    box_dimensions.y/ (m_particle_dimensions.y - 1),
+    box_dimensions.z/ (m_particle_dimensions.z - 1));
 
-for (int i = 0; i < iter_dimensions.x; i++) {
-    for (int j = 0; j < iter_dimensions.y; j++) {
-        for (int k = 0; k < iter_dimensions.z; k++) {
-            Cube &marchCube = Cube();
+//cout << box_dimensions.x / (m_particle_dimensions.x - 1) << endl;
+//cout << box_dimensions.y / (m_particle_dimensions.y - 1) << endl;
+//cout << box_dimensions.z / (m_particle_dimensions.z - 1) << endl;
+
+// TO CHANGE THE STEP SIZE WHILE KEEPING THE TOTAL LWH, 
+// WE JUST NEED TO MULTIPLY x,y,z's numerator by a number (#)
+// and divide the depth,row,col < variable by a number (#)
+// for example, depth < m_part_dim.z / [(5)]
+//              z = depth * box_dim.z * [(5)] / (m_part_dim.z - 1)
+// where we want to increase the step size 5 times
+
+float x, y, z;
+for (int depth = 0; depth < m_particle_dimensions.z; depth++) {
+    float z = depth * box_dimensions.z / (m_particle_dimensions.z - 1);
+    for (int row = 0; row < m_particle_dimensions.y; row++) {
+        float y = row * box_dimensions.y / (m_particle_dimensions.y - 1);
+        for (int col = 0; col < m_particle_dimensions.x; col++) {
+            float x = col * box_dimensions.x / (m_particle_dimensions.x - 1);
+            Cube& marchCube = Cube();
 
             // Will create a empty cube pass in top left positional index of the cube 
             // Iterate over cube creation and then just emplace back after you fill it up
-            Vector3D index = Vector3D(i, j, k);
+            Vector3D index = Vector3D(x, y, z);
+            
+            /*
+            cout << "March Cube" << endl;
+            cout << x;
+            cout << ", ";
+            cout << y;
+            cout << ", ";
+            cout << z << endl;
+            */
+
             createCube(marchCube, index);
-            cube_Vector.emplace_back(marchCube);
-           
+            // cube_Vector.emplace_back(marchCube);
         }
     }
 }
@@ -128,10 +115,7 @@ for (int i = 0; i < iter_dimensions.x; i++) {
 void marchingCube::main_March(string filename) {
     // we have the marching cube vector now just iterate over the list and 
     for (auto q = begin(cube_Vector); q != end(cube_Vector); q++) {
-        // is this how we init a new array of triangles???
-        newTriangle *triangleHolder;
         Polygonise(*q, m_isovalue);
-
     }
     // will call the file.obj function in the main function btw and not here
     triToObj(filename);
@@ -143,6 +127,7 @@ void marchingCube::main_March(string filename) {
 // r is the vector from particle to position p
 float marchingCube::isotropic_kernel(Vector3D r, float h) {
     float constant = 315 / (64 * PI * pow(h, 9));
+
     if (r.norm() >= 0 && r.norm() <= h) {
         return constant * pow(h * h - r.norm() * r.norm(), 3);
     } else {
@@ -156,6 +141,7 @@ float marchingCube::isovalue(Vector3D pos, float h) {
     // Hash the position vector
     // Find particles that are neighboring
     // Check for particles that are in specific radius
+    
     bool speedup = true;
     if (speedup) {
         // Need to check surrounding cube for edge case
@@ -183,15 +169,18 @@ float marchingCube::isovalue(Vector3D pos, float h) {
         }
     }
     else {
+    
         // Code with no speedup using loop through particles
         for (auto q = begin(m_particles); q != end(m_particles); q++) {
+            //cout << (pos - q->position).norm() << endl
+
             if ((pos - q->position).norm()) {
                 rho += m_particle_mass * isotropic_kernel(pos - q->position, h);
             }
         }
     }
 
-    cout << rho << "\n";
+    // cout << rho << "\n";
     return rho;
 }
 
@@ -216,51 +205,53 @@ string marchingCube::hash_position(Vector3D pos, float h) {
 // Create the Marching Cube Grid (each sub-cube within the whole space)
 // Inputs: the index of the cube in all directions (i.e. 1 in X, 4 in Y, and 2 in Z)
 void marchingCube::createCube(Cube &cube, Vector3D index) {
-    // Assign all the vertices within a cube to its approperiate (x, y, z) positions
-    // Assign all approperiate isovalues to each vertex
-    // Then in the init() function, push the cube into our cube_vector
-
+   
     // Cube placement in verticies is based on http://paulbourke.net/geometry/polygonise/polygonise1.gif
-    // 
     // Configuration:
     // bottom-backward-left = 0, bottom-back-right = 1, bottom-front-right = 2,
     // bottom-front-left = 3, top-back-left = 4, top-back-right = 5,
     // top-front-right = 6, top-front-left = 7 
-    
     // The top-back-left index we pass in is vertex 4 
-    // We may need to have edge cases where we surpass the original whole box with our marching cubes because we ceil in iter_dimensions?
 
-    
     // Assign the verticies
-    float unit_L = m_unit_cube.x;
-    float unit_W = m_unit_cube.y;
-    float unit_H = m_unit_cube.z;
+    float unit_X = m_unit_dimensions.x;
+    float unit_Y = m_unit_dimensions.y;
+    float unit_Z = m_unit_dimensions.z;
 
     // The way I did this was that to go from one verticie to another of the cube you just add 1 unit length
     // Can do this visually, checking the picture aswell to do re-verify this works
-    cube.vertices[0] = Vector3D(index.x, index.y, index.z + unit_H);
-    cube.vertices[1] = Vector3D(index.x + unit_L, index.y, index.z + unit_H);
-    cube.vertices[2] = Vector3D(index.x + unit_L, index.y + unit_W, index.z + unit_H);
-    cube.vertices[3] = Vector3D(index.x, index.y + unit_W, index.z + unit_H);
-    cube.vertices[4] = index;
-    cube.vertices[5] = Vector3D(index.x + unit_L, index.y, index.z);
-    cube.vertices[6] = Vector3D(index.x + unit_L, index.y + unit_W, index.z);
-    cube.vertices[7] = Vector3D(index.x, index.y + unit_W, index.z);
-    
+    // NOTE TO SELF FOR SANITY: IF YOU USE A CLASS VAR NAME DO NOT RE-INITIALIZE IT OR ELSE IT WILL GIVE YOU 0  AAAAAAAAAAAAAAA
 
-    // The way we calculate the normals is to take a vertex and it's diagonal counterpart and subtract it to get the
-    // 3d ray that is orthogonal/diagonal to the vertex and it's 3 edges
-    // 
-    //      x--------x
-    //     /|       /|
-    //    x--------x |
-    //    | |      | |
-    //    | x------|-x  
-    //    x--------x
-    // 
-    // However, another way is to do something with the isovalues
-    // but we can try it if this one does not work.
-    // 
+    cube.vertices[0] = Vector3D(index.x, index.y - unit_Y, index.z);
+    cube.vertices[1] = Vector3D(index.x + unit_X, index.y - unit_Y, index.z);
+    cube.vertices[2] = Vector3D(index.x + unit_X, index.y - unit_Y, index.z + unit_Z);
+    cube.vertices[3] = Vector3D(index.x, index.y - unit_Y, index.z + unit_Z);
+    cube.vertices[4] = index;
+    cube.vertices[5] = Vector3D(index.x + unit_X, index.y, index.z);
+    cube.vertices[6] = Vector3D(index.x + unit_X, index.y, index.z + unit_Z);
+    cube.vertices[7] = Vector3D(index.x, index.y, index.z + unit_Z);
+    
+    /*
+    cout << "CUBE vertices" << endl;
+    cout << "0: ";
+    cout << cube.vertices[0] << endl;
+    cout << "1: ";
+    cout << cube.vertices[1] << endl;
+    cout << "2: ";
+    cout << cube.vertices[2] << endl;
+    cout << "3: ";
+    cout << cube.vertices[3] << endl;
+    cout << "4: ";
+    cout << cube.vertices[4] << endl;
+    cout << "5: ";
+    cout << cube.vertices[5] << endl;
+    cout << "6: ";
+    cout << cube.vertices[6] << endl;
+    cout << "7: ";
+    cout << cube.vertices[7] << endl;
+    */
+
+    // Normals
     cube.normals[0] = cube.vertices[0] - (cube.vertices[0] - cube.vertices[6]).unit();
     cube.normals[1] = cube.vertices[1] - (cube.vertices[1] - cube.vertices[7]).unit();
     cube.normals[2] = cube.vertices[2] - (cube.vertices[2] - cube.vertices[4]).unit();
@@ -270,12 +261,16 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     cube.normals[6] = cube.vertices[6] + (cube.vertices[6] - cube.vertices[0]).unit();
     cube.normals[7] = cube.vertices[7] + (cube.vertices[7] - cube.vertices[1]).unit();
     
-    // Assign the isovalue for each cube verticie 
+    // Assign the isovalue for each cube verticie
+    //cout << "NEW CUBE" << endl;
     for (int i = 0; i < 8; i++) {
-        //cout << i << "\n";
         cube.isovalues[i] = isovalue(cube.vertices[i], m_h);
+        //cout << i << endl;
+        //cout << cube.isovalues[i] << endl;
+
     }
     //cout << "Finish ISO" <<"\n";
+    cube_Vector.emplace_back(cube);
 
     return;
 }
@@ -292,12 +287,6 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
    of totally below the isolevel.
 */
 // http://paulbourke.net/geometry/polygonise/ is origin of code
-// We just need to modify it to suit our code or modify our code to suit it
-
-// We replace grid with cube and 
-// The triangles is just a empty list of triangles you pass in to have it filled,
-// THIS IS WHERE WE FILL IN THE TRIANGLES WHERE WE WILL USE IT TO FILL IN THE RASTERIZER
-// This code is modified btw
 int marchingCube::Polygonise(Cube cube, double isolevel) {
 
     int i, ntriang;
@@ -310,8 +299,8 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
      tells us which vertices are inside of the surface
     */
     cubeindex = 0;
-    
-    /*cout << "CUBE ISOVALUES" << endl;
+    /*
+    cout << "CUBE ISOVALUES" << endl;
     cout << cube.isovalues[0] << endl;
     cout << cube.isovalues[1] << endl;
     cout << cube.isovalues[2] << endl;
@@ -330,6 +319,8 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
     if (cube.isovalues[5] < isolevel) cubeindex |= 32;
     if (cube.isovalues[6] < isolevel) cubeindex |= 64;
     if (cube.isovalues[7] < isolevel) cubeindex |= 128;
+
+    // cout << cubeindex << endl;
 
 
     /* Cube is entirely in/out of the surface */
