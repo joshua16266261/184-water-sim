@@ -5,6 +5,10 @@
 #include <string>
 #include <fstream>
 
+#pragma GCC target ("avx2")
+#pragma GCC optimization ("O3")
+#pragma GCC optimization ("unroll-loops")
+
 #include "fluid.h"
 #include "particle.h"
 #include "collision/plane.h"
@@ -31,6 +35,8 @@ marchingCube::marchingCube(Vector3D box_dimensions, Vector3D unit_cube,
 // Cube dimensions we want: ex: box_dim = (9,9,9), cube_dim = (3,3,3) so (27 in total since 9/3 ^ 3)
 // search_radius, mass, h, and other variables
 
+
+
 void marchingCube::init(Vector3D box_dimensions, Vector3D unit_cube,
  vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
  float h, float search_radius, float particle_mass, 
@@ -43,13 +49,15 @@ m_box_dimensions = box_dimensions;
 m_unit_cube = unit_cube;
 // m_particles is outside of the object for this function to work
 m_particles = particles;
-m_hash_to_particles = hash_to_particles;
+//m_hash_to_particles = hash_to_particles;
 m_h = h;
 m_isovalue = isovalue;
 m_search_radius = search_radius;
 m_particle_mass = particle_mass;
 m_density = density;
 
+// This variable set the size of the box hash used to speedup
+box_hash_size = 2.;
 // RESET vector of triangles and then re-make it
 // do we need to do this????
 // delete(tri_vector);
@@ -80,8 +88,20 @@ for (int depth = 0; depth < 10; depth++) {
     }
 }
 */
-// NOW m_particles holdsall the particles
-
+// Build the Initial Hash Table
+cout << particles.size();
+for (auto p = begin(particles); p != end(particles); p++) {
+    string key = hash_position(p->position, box_hash_size);
+    //cout << p->position;
+    if (m_hash_to_particles.count(key) > 0) {
+        m_hash_to_particles[key]->emplace_back(&*p);
+    }
+    else {
+        vector<Particle*>* v = new vector<Particle*>;
+        m_hash_to_particles[key] = v;
+        v->emplace_back(&*p);
+    }
+}
 
 
 // The number of times we iterate through each dimension (l,w,h)
@@ -126,38 +146,58 @@ float marchingCube::isotropic_kernel(Vector3D r, float h) {
     if (r.norm() >= 0 && r.norm() <= h) {
         return constant * pow(h * h - r.norm() * r.norm(), 3);
     } else {
-        return 0;
+        return 0.0;
     }
 }
 
 // Compute the density of a pos (will be used as the isovalue)
 float marchingCube::isovalue(Vector3D pos, float h) {
-    float rho = 0;
+    float rho = 0.0;
     // Hash the position vector
     // Find particles that are neighboring
     // Check for particles that are in specific radius
-    //string vortex_key = hash_position(pos, h);
-    //cout << m_hash_to_particles;
-    /*
-    for (auto q = begin(*(m_hash_to_particles[vortex_key])); q != end(*(m_hash_to_particles[vortex_key])); q++) {
-        
-        if ((pos - (*q)->position).norm() ) {
-            rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
-        }
-       
-    }
-    */
+    bool speedup = true;
+    if (speedup) {
+        // Need to check surrounding cube for edge case
 
-    for (auto q = begin(m_particles); q != end(m_particles); q++) {
-        if ((pos - q->position).norm() <= m_search_radius) {
-            rho += m_particle_mass * isotropic_kernel(pos - q->position, h);
+        //vector<Vector3D> cube_off = { Vector3D(0, 0, 0), Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0, 1, 0), Vector3D(0, -1, 0), Vector3D(1, 0, 0), Vector3D(-1, 0, 0)};
+        vector<Vector3D> cube_off = { Vector3D(0, 0, 0), Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0, 1, 0), Vector3D(0, 1, 1), Vector3D(0, 1, -1), Vector3D(0, -1, 0), Vector3D(0, -1, 1), Vector3D(0, -1, -1),
+                                      Vector3D(1, 0, 0), Vector3D(1, 0, 1), Vector3D(1, 0, -1), Vector3D(1, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 1, -1), Vector3D(1, -1, 0), Vector3D(1, -1, 1), Vector3D(1, -1, -1),
+                                      Vector3D(-1, 0, 0), Vector3D(-1, 0, 1), Vector3D(-1, 0, -1), Vector3D(-1, 1, 0), Vector3D(-1, 1, 1), Vector3D(-1, 1, -1), Vector3D(-1, -1, 0), Vector3D(-1, -1, 1), Vector3D(-1, -1, -1)};
+        for (auto off : cube_off) {
+            // Compute the Vortex of with the offset applied
+            Vector3D update_pos = Vector3D(pos.x + box_hash_size * off.x, pos.y + box_hash_size * off.y, pos.z + box_hash_size * off.z);
+            string vortex_key = hash_position(update_pos, box_hash_size);
+            auto c = (m_hash_to_particles[vortex_key]);
+            if (c == NULL) {
+                continue;
+            }
+            for (auto q = begin(*(m_hash_to_particles[vortex_key])); q != end(*(m_hash_to_particles[vortex_key])); q++) {
+                // Check if particle is inside the radius
+                if ((pos - (*q)->position).norm() <= m_search_radius) {
+
+                    rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+                }
+            }
+
         }
     }
+    else {
+        // Code with no speedup using loop through particles
+        for (auto q = begin(m_particles); q != end(m_particles); q++) {
+            if ((pos - q->position).norm()) {
+                rho += m_particle_mass * isotropic_kernel(pos - q->position, h);
+            }
+        }
+    }
+
+    cout << rho << "\n";
     return rho;
 }
 
 string marchingCube::hash_position(Vector3D pos, float h) {
     // Hash a 3D position into a unique Vector3D identifier that represents membership in some 3D box volume.
+    // Assume 30x30x30 cube and divide by h=5
     int x_box = floor(pos.x / h);
     int y_box = floor(pos.y / h);
     int z_box = floor(pos.z / h);
@@ -232,8 +272,10 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     
     // Assign the isovalue for each cube verticie 
     for (int i = 0; i < 8; i++) {
+        //cout << i << "\n";
         cube.isovalues[i] = isovalue(cube.vertices[i], m_h);
     }
+    //cout << "Finish ISO" <<"\n";
 
     return;
 }
@@ -421,6 +463,7 @@ Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double v
 }
 
 void marchingCube::triToObj(string fName) {
+   
     ofstream ofile;
     ofile.open(fName);
     if (ofile.is_open()) {

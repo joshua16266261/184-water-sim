@@ -51,6 +51,7 @@ struct marchingCube {
     float m_density;
     float m_h;
     float m_isovalue;
+    float box_hash_size;
     vector<Particle> m_particles;
     unordered_map<string, vector<Particle*>*> m_hash_to_particles;
     Vector3D m_unit_cube;
