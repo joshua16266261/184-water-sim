@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	Vector3D unitDim = Vector3D(1., 1., 1.);
 	float h = 1.;
 	float search_radius = 1.;
-	float particle_mass = 1.;
+	float particle_mass = 10.;
 	float density = 1.;
 	float isovalue = 8.;
 
