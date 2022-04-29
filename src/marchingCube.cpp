@@ -25,8 +25,8 @@ marchingCube::marchingCube(){}
 marchingCube::marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions,
     vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
     float h, float search_radius, float particle_mass,
-    float density, float isovalue){
-    init(box_dimensions, particle_dimensions, particles, hash_to_particles, h,  search_radius,  particle_mass, density, isovalue);
+    float density, float isovalue, float step_size_multiplier){
+    init(box_dimensions, particle_dimensions, particles, hash_to_particles, h,  search_radius,  particle_mass, density, isovalue, step_size_multiplier);
 }
 
 
@@ -34,7 +34,7 @@ marchingCube::marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions
 void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
  vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
  float h, float search_radius, float particle_mass, 
- float density, float isovalue) {
+ float density, float isovalue, float step_size_multiplier) {
 
 
 m_box_dimensions = box_dimensions;
@@ -45,7 +45,7 @@ m_isovalue = isovalue;
 m_search_radius = search_radius;
 m_particle_mass = particle_mass;
 m_density = density;
-
+m_step_size_multiplier = step_size_multiplier;
 // This variable set the size of the box hash used to speedup
 box_hash_size = 2.;
 
@@ -67,9 +67,9 @@ for (auto p = begin(particles); p != end(particles); p++) {
 
 
 // Sets the unit lwh
-m_unit_dimensions = Vector3D(box_dimensions.x / (m_particle_dimensions.x - 1),
-    box_dimensions.y/ (m_particle_dimensions.y - 1),
-    box_dimensions.z/ (m_particle_dimensions.z - 1));
+m_unit_dimensions = Vector3D(box_dimensions.x * (m_step_size_multiplier) / (m_particle_dimensions.x - 1),
+    box_dimensions.y * (m_step_size_multiplier) / (m_particle_dimensions.y - 1),
+    box_dimensions.z * (m_step_size_multiplier) / (m_particle_dimensions.z - 1));
 
 //cout << box_dimensions.x / (m_particle_dimensions.x - 1) << endl;
 //cout << box_dimensions.y / (m_particle_dimensions.y - 1) << endl;
@@ -83,12 +83,12 @@ m_unit_dimensions = Vector3D(box_dimensions.x / (m_particle_dimensions.x - 1),
 // where we want to increase the step size 5 times
 
 float x, y, z;
-for (int depth = 0; depth < m_particle_dimensions.z; depth++) {
-    float z = depth * box_dimensions.z / (m_particle_dimensions.z - 1);
-    for (int row = 0; row < m_particle_dimensions.y; row++) {
-        float y = row * box_dimensions.y / (m_particle_dimensions.y - 1);
-        for (int col = 0; col < m_particle_dimensions.x; col++) {
-            float x = col * box_dimensions.x / (m_particle_dimensions.x - 1);
+for (int depth = 0; depth < m_particle_dimensions.z / (m_step_size_multiplier); depth++) {
+    float z = depth * box_dimensions.z * m_step_size_multiplier / (m_particle_dimensions.z - 1);
+    for (int row = 0; row < m_particle_dimensions.y / m_step_size_multiplier; row++) {
+        float y = row * box_dimensions.y * m_step_size_multiplier / (m_particle_dimensions.y - 1);
+        for (int col = 0; col < m_particle_dimensions.x / m_step_size_multiplier; col++) {
+            float x = col * box_dimensions.x * m_step_size_multiplier / (m_particle_dimensions.x - 1);
             Cube& marchCube = Cube();
 
             // Will create a empty cube pass in top left positional index of the cube 

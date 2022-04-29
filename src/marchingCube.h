@@ -42,7 +42,7 @@ struct marchingCube {
     marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions,
         vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
         float h, float search_radius, float particle_mass,
-        float density, float isovalue);
+        float density, float isovalue, float step_size_multiplier);
 
 
     // The values passed into init
@@ -52,6 +52,7 @@ struct marchingCube {
     float m_h;
     float m_isovalue;
     float box_hash_size;
+    float m_step_size_multiplier;
     vector<Particle> m_particles;
     unordered_map<string, vector<Particle*>*> m_hash_to_particles;
     Vector3D m_particle_dimensions;
@@ -68,7 +69,7 @@ struct marchingCube {
     void init(Vector3D box_dimensions, Vector3D particle_dimensions,
         vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
         float h, float search_radius, float particle_mass,
-        float density, float isovalue);
+        float density, float isovalue, float step_size_multiplier);
 
 
     // The main march
