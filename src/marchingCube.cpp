@@ -47,7 +47,7 @@ m_particle_mass = particle_mass;
 m_density = density;
 m_step_size_multiplier = step_size_multiplier;
 // This variable set the size of the box hash used to speedup
-box_hash_size = 2.;
+box_hash_size = .1;
 
 
 // Build the Initial Hash Table
