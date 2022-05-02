@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	float particle_mass = 1.;
 	float density = 1.;
 	float step_size_multiplier = 1.;
-	float isovalue = 1710.;
+	float isovalue = 3.1;
 	//vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
 	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);

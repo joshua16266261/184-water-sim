@@ -83,11 +83,11 @@ m_unit_dimensions = Vector3D(box_dimensions.x * (m_step_size_multiplier) / (m_pa
 // where we want to increase the step size 5 times
 
 float x, y, z;
-for (int depth = 0; depth < m_particle_dimensions.z / (m_step_size_multiplier); depth++) {
+for (int depth = 0; depth <= ceil(m_particle_dimensions.z / (m_step_size_multiplier)); depth++) {
     float z = depth * box_dimensions.z * m_step_size_multiplier / (m_particle_dimensions.z - 1);
-    for (int row = 0; row < m_particle_dimensions.y / m_step_size_multiplier; row++) {
+    for (int row = 0; row <= ceil(m_particle_dimensions.y / (m_step_size_multiplier)); row++) {
         float y = row * box_dimensions.y * m_step_size_multiplier / (m_particle_dimensions.y - 1);
-        for (int col = 0; col < m_particle_dimensions.x / m_step_size_multiplier; col++) {
+        for (int col = 0; col <= ceil(m_particle_dimensions.x / (m_step_size_multiplier)); col++) {
             float x = col * box_dimensions.x * m_step_size_multiplier / (m_particle_dimensions.x - 1);
             Cube& marchCube = Cube();
 
@@ -392,7 +392,7 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
     if (edgeTable[cubeindex] & 2048)
         vertlist[11] =
         VertexInterp(isolevel, cube.vertices[3], cube.vertices[7], cube.isovalues[3], cube.isovalues[7]);
-        normlist[10] = VertexInterpNormals(isolevel, cube.normals[3], cube.normals[7], cube.isovalues[3], cube.isovalues[7]);
+        normlist[11] = VertexInterpNormals(isolevel, cube.normals[3], cube.normals[7], cube.isovalues[3], cube.isovalues[7]);
 
 
     /* Create the triangle */
@@ -408,8 +408,8 @@ int marchingCube::Polygonise(Cube cube, double isolevel) {
         triangles.coordinates[1] = vertlist[triTable[cubeindex][i + 1]];
         triangles.coordinates[2] = vertlist[triTable[cubeindex][i + 2]];
 
-        triangles.normal[0] = normlist[triTable[cubeindex][i + 2]];
-        triangles.normal[1] = normlist[triTable[cubeindex][i + 2]];
+        triangles.normal[0] = normlist[triTable[cubeindex][i]];
+        triangles.normal[1] = normlist[triTable[cubeindex][i + 1]];
         triangles.normal[2] = normlist[triTable[cubeindex][i + 2]];
 
         // THIS IS THE VECTOR WE GET ALL OUR TRIANGLES WE WANT TO RASTERIZE INTO 3D FROM
