@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>Realistic Water Simulation with Spray, Foam, and Bubbles</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">Project Milestone</h1>
+<br>
+
+<!--You should briefly summarize what you have accomplished, preliminary results, reflect on progress relative to your plan, and update your work plan as appropriate.-->
+<h2 align="middle">Accomplishments</h2>
+<h3 align="middle">Particle Simulation</h3>
+<p>For particle simulation, we have written working code that can generate simulations that exhibit the expected behavior, such as incompressibility.</p>
+<p>To test our simulations, we have been plotting the particle positions in Matplotlib to get animations shown in Preliminary Results.</p>
+<p>However, we still need to fine-tune some parameters to get more stable results that also exhibit more surface tension.</p>
+
+<h3 align="middle">Mesh Generation</h3>
+<p>For fluid particle rasterization with the marching cubes algorithm, we have successfully created a working build that can create a feasible looking 3D mesh based on the distribution of fluid particles. For our preliminary results, we have generated a one frame cube given an equal distribution of fluid particles within our boxed environment. Relative to our plan, we have almost met the expectations, however there still needs to be some fine tuning of the input parameters and some speed optimizations in order to meet our goal of a visually accurate and efficient rendering of fluid particles.</p>
+<br>
+
+<h2 align="middle">Preliminary Results</h2>
+<h3 align="middle">Particle Simulation</h3>
+<div align="middle">
+  <img src="not_enough_viscosity.gif" align="middle" width="400px"/>
+  <figcaption align="middle">Need better surface tension</figcaption>
+</div>
+
+<br>
+
+<h3 align="middle">Mesh Generation</h3>
+<div align="middle">
+  <img src="cube.png" align="middle" width="400px"/>
+  <figcaption align="middle">Mesh of a cube of particles</figcaption>
+</div>
+
+
+<h2 align="middle">Progress Reflection</h2>
+<p>Progress has been slower than expected on both fronts. For both simulating and rendering the fluid we are still working on tuning our parameters when we expected to be simulating water-air interactions by now. We've replanned our schedule to fit our current situation and still hope to present a realistic water simulation with water-air interactions by May 5.</p>
+
+<h2 align="middle">Updated Schedule</h2>
+
+    <li> Week 3 </li>
+    <ul>
+      <li>By 4/27: Finish tuning parameters for particle simulation and get started on diffuse particle simulation</li>
+      <li>By 4/29: Finish tuning parameters and speeding up mesh generation</li>
+      <li>Look into methods to render diffuse material</li>
+    </ul>
+    
+  <li> Week 4 </li>
+    <ul>
+      <li>By 5/3: Finish code, starting rendering with bubbles</li>
+      <li>Create the final presentation</li>
+    </ul>
+  <li> Week 5 </li>
+    <ul>
+      <li>By 5/10: Create report, webpage, and video</li>
+    </ul>
+
+<h2 align="middle">Milestone Video</h2>
+<div align="middle">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/J4tjUpuaOaI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+
+<h2 align="middle">Presentation Slides</h2>
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vSYwy1yNF5jJ550T4boWjsEs7aDM7Ow65u-MTlYtoSUrw_uK6q1q-laCFbChRdY3alfOLDE5uFLSWOz/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
+</body>
+</html>

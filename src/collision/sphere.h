@@ -13,9 +13,8 @@ public:
   Sphere(const Vector3D &origin, double radius, double friction, int num_lat = 40, int num_lon = 40)
       : origin(origin), radius(radius), radius2(radius * radius),
         friction(friction), m_sphere_mesh(Misc::SphereMesh(num_lat, num_lon)) {}
-
-  void render(GLShader &shader);
-  void collide(PointMass &pm);
+	
+  void collide(Particle &p, double cr, double delta_t);
 
 private:
   Vector3D origin;
