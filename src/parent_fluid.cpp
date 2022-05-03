@@ -67,6 +67,8 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
 //		// We use fluid particle neighbors for
 //
 //    }
+	
+	fluid->build_spatial_map(2 * dp->h);
     
     // Step 3
     #pragma omp parallel for
@@ -113,18 +115,18 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
 //	#pragma omp parallel for
 	int i = 0;
 	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-		std::cout << i << " ";
+//		std::cout << i << " ";
 		set_normal(&*p);
 		i++;
 	}
 	
 	// Calculate potentials and generate diffuse particles
-    #pragma omp parallel for
     for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
         double I_k = k_potential(&*p);
+		std::cout << I_k << '\n';
         double I_ta = ta_potential(&*p);
         double I_wc = wc_potential(&*p);
-        int n_d = int(I_k * (dp->k_ta * I_ta + dp->k_wc * I_wc) * dp->delta_t);
+        int n_d = I_k * (dp->k_ta * I_ta + dp->k_wc * I_wc) * dp->delta_t;
 		
         generate(&*p, n_d);
     }
@@ -182,8 +184,8 @@ bool ParentFluid::advect_bubbles(DiffuseParticle *p, Vector3D external_accelerat
     Vector3D num = Vector3D();
     double den = 0;
     for (auto q = begin(*(fake.neighbors)); q != end(*(fake.neighbors)); q++) {
-		num += ((*q)->position - (*q)->last_position)/dp->delta_t * cubic_spline_kernel((fake.position - (*q)->last_position), dp->h);
-        den += cubic_spline_kernel((fake.position - (*q)->last_position), dp->h);
+		num += ((*q)->position - (*q)->last_position)/dp->delta_t * cubic_spline_kernel(fake.position - (*q)->last_position, dp->h);
+        den += cubic_spline_kernel(fake.position - (*q)->last_position, dp->h);
 	}
     Vector3D avg_velocity = num / den;
     p->velocity = p->last_velocity + dp->delta_t * (-dp->k_b * Vector3D(0, 0, -9.81) + dp->k_d * (avg_velocity - p->last_velocity) / dp->delta_t);
@@ -234,7 +236,7 @@ void ParentFluid::set_normal(Particle *p) {
 	for (auto q = begin(*p->neighbors); q != end(*p->neighbors); q++) {
 		n += 1.0 / (*q)->rho * fluid->grad_spiky_kernel(p->position - (*q)->position, fp->h);
 	}
-	std::cout << n.norm() << '\n';
+//	std::cout << n.norm() << '\n';
 	if (n.norm() > dp->l) {
 		// p is a surface particle
 		n.normalize();
@@ -293,7 +295,8 @@ void ParentFluid::generate(Particle *p, int n) {
         double xh = double(rand()) / RAND_MAX;
         double h = xh * (dp->delta_t * p->velocity).norm();
 		
-        Vector3D xd = p->last_position + r * cos(theta) * e1 + r * sin(theta) * e2 + h * p->velocity / p->velocity.norm();
+//        Vector3D xd = p->last_position + r * cos(theta) * e1 + r * sin(theta) * e2 + h * p->velocity / p->velocity.norm();
+		Vector3D xd = p->position + r * cos(theta) * e1 + r * sin(theta) * e2 + h * p->velocity / p->velocity.norm();
         Vector3D vd = r * cos(theta) * e1 + r * sin(theta) * e2 + p->velocity;
         DiffuseParticle *d = new DiffuseParticle(xd, vd, BUBBLE);
 		

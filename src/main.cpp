@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
 	fp->relaxation = 1600;
 
 	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 1000, 1000, 13);
+	dp->t_k_min = 2;
 	ParentFluid *pf = new ParentFluid(4, 4, 4, 40, 60, 2.5, dp);
 	pf->fp = fp;
 
@@ -110,15 +111,24 @@ int main(int argc, char **argv) {
 		f->simulate(fp, accel, &collision);
 		pf->fluid = f;
 		pf->simulate_step(accel, &collision);
+		
+//		#pragma omp parallel for
+//		for (auto p = begin(f->particles); p != end(f->particles); p++) {
+//			p->position /= 4;
+//			p->position += Vector3D(0.5, 0.5, 0.5);
+//		}
+//
+//		#pragma omp parallel for
+//		for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
+//			(*p)->position /= 4;
+//			(*p)->position += Vector3D(0.5, 0.5, 0.5);
+//		}
+		
 		write_fluid_pos_to_file(pf->fluid, "fluid_" + to_string(frame) + ".txt");
 		write_diffuse_pos_to_file(pf, "diffuse_" + to_string(frame) + ".txt");
 	}
 
-//	#pragma omp parallel for
-//	for (auto p = begin(f->particles); p != end(f->particles); p++) {
-//		p->position /= 4;
-//		p->position += Vector3D(0.5, 0.5, 0.5);
-//	}
+	
 //
 //	write_pos_to_file(f, "fluid_particles.txt");
 
