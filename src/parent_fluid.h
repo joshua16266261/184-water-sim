@@ -100,7 +100,7 @@ struct ParentFluid {
 		double q = x.norm() / h;
 		double constant = 1.0 / (pow(h, 3) * PI);
 		if (q <= 1) {
-			return (1 - 1.5 * pow(q,2) + 0.75 * pow(q, 3)) * constant;
+			return (1 - 1.5 * pow(q, 2) + 0.75 * pow(q, 3)) * constant;
 		} else if (q <= 2) {
 			return 1.0 / 4 * pow(2 - q, 3) * constant;
 		} else {

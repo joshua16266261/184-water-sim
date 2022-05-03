@@ -44,7 +44,6 @@ int main(int argc, char **argv) {
 		p->position += Vector3D(0, 0, 4);
 	}
 
-//	FluidParameters *fp = new FluidParameters(EPS_F, 2.5, 60, 5);
 	FluidParameters *fp = new FluidParameters(EPS_F, 7, 60, 5);
 
 	Vector3D g = Vector3D(0, 0, -9.81);
@@ -57,35 +56,10 @@ int main(int argc, char **argv) {
 	Plane *back_wall = new Plane(Vector3D(0, 6, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject *> collision = vector<CollisionObject *>{floor, left_wall, right_wall, front_wall, back_wall};
 
-
-//	const string h = "--h";
-//	const string delta_q = "--q";
-//	const string k = "--k";
-//	const string c = "--c";
-//	const string vort = "--vort";
-//	const string relax = "--relax";
 	const string time = "--time";
 	const string fps = "--fps";
 
 	for (int i = 1; i < argc - 1; i++) {
-//		if (argv[i] == h) {
-//			fp->h = stod(argv[i + 1]);
-//		} else if (argv[i] == delta_q) {
-//			// --q param must come after --h param
-//			fp->delta_q = stod(argv[i + 1]) * fp->h * Vector3D(1, 0, 0);
-//		} else if (argv[i] == k) {
-//			fp->k = stod(argv[i + 1]);
-//		} else if (argv[i] == c) {
-//			fp->c = stod(argv[i + 1]);
-//		} else if (argv[i] == vort) {
-//			fp->vorticity_eps = stod(argv[i + 1]);
-//		} else if (argv[i] == relax) {
-//			fp->relaxation = stod(argv[i + 1]);
-//		} else if (argv[i] == time) {
-//			fp->total_time = stod(argv[i + 1]);
-//		} else if (argv[i] == fps) {
-//			fp->fps = stod(argv[i + 1]);
-//		}
 		if (argv[i] == time) {
 			fp->total_time = stod(argv[i + 1]);
 		} else if (argv[i] == fps) {
@@ -108,6 +82,7 @@ int main(int argc, char **argv) {
 
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		std::cout << frame << '\n';
+		
 		f->simulate(fp, accel, &collision);
 		pf->fluid = f;
 		pf->simulate_step(accel, &collision);

@@ -51,7 +51,7 @@ void Fluid::buildGrid() {
 
 void Fluid::set_neighbors(Particle *p, double h) {
 	// Get all particles distance h or less away and put them in p->neighbors
-	string key = hash_position(p->position, h*2);
+	string key = hash_position(p->position, h);
 	(p->neighbors)->clear();
 	
 	for (int i = -1; i < 2; i++) {
@@ -232,7 +232,6 @@ void Fluid::simulate(FluidParameters *fp,
 			// Update position (line 17 of Algorithm 1)
 			p->position += p->delta_p;
 		}
-		
     }
 	
 	#pragma omp parallel for
@@ -264,7 +263,7 @@ void Fluid::build_spatial_map(double h) {
 
     // Build a spatial map out of all of the particles
 	for (auto p = begin(particles); p != end(particles); p++) {
-		string key = hash_position(p->position, h * 2);
+		string key = hash_position(p->position, h);
 		if (map.count(key) > 0) {
 			map[key]->emplace_back(&*p);
 		} else {

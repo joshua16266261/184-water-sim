@@ -26,7 +26,7 @@ ParentFluid::ParentFluid(double length, double width, double height, int particl
     this->fp = new FluidParameters(6000, total_time, 60, 5);
     this->diffuse_particles = new vector<DiffuseParticle*>();
     this->dp = dp;
-    this->vol_radius = 1.0/particle_density;
+    this->vol_radius = 1.0 / particle_density;
 	
     this->diffuse_particles->clear();
 }
@@ -54,19 +54,13 @@ ParentFluid::~ParentFluid() {
 
 void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<CollisionObject *> *collision_objects) {
     // FIXME: For some reason, directly calling simulate on the fluid is faster than having the ParentFluid do the simulation
-	// FIXME: Everywhere, there's a fluid
+	
     // Step 1: Simulate 1 step of fluid, calulate total acceleration
 //    fluid->simulate(fp, external_accelerations, collision_objects);
     Vector3D net_accel = Vector3D();
     for (auto p = begin(external_accelerations); p != end(external_accelerations); p++) {
         net_accel += *p;
     }
-    
-//    #pragma omp parallel for
-//    for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-//		// We use fluid particle neighbors for
-//
-//    }
 	
 	fluid->build_spatial_map(2 * dp->h);
     
@@ -87,7 +81,7 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
     
     // Step 4: Advection and dissolution
     #pragma omp parallel for
-    for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles);) {
+    for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles); ) {
         bool dead = advect(*p, net_accel);
         if (dead) {
             p = diffuse_particles->erase(p);
@@ -98,6 +92,11 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
             p++;
         }
     }
+	
+//	#pragma omp parallel for
+//	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
+//		fluid->set_neighbors(&*p, dp->h);
+//	}
     
     // Step 5
 	// Set rho for all fluid particles
@@ -112,26 +111,19 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
 	}
 	
 	// Calculate normals for all fluid particles (0 if not surface particle)
-//	#pragma omp parallel for
-	int i = 0;
+	#pragma omp parallel for
 	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-//		std::cout << i << " ";
 		set_normal(&*p);
-		i++;
 	}
 	
 	// Calculate potentials and generate diffuse particles
     for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
         double I_k = k_potential(&*p);
-		std::cout << I_k << '\n';
         double I_ta = ta_potential(&*p);
         double I_wc = wc_potential(&*p);
-        int n_d = I_k * (dp->k_ta * I_ta + dp->k_wc * I_wc) * dp->delta_t;
-		
+        int n_d = int(I_k * (dp->k_ta * I_ta + dp->k_wc * I_wc) * dp->delta_t);
         generate(&*p, n_d);
     }
-    
-    
 }
 
 bool ParentFluid::advect(DiffuseParticle *p, Vector3D external_accelerations) {
@@ -156,8 +148,8 @@ bool ParentFluid::advect_foam(DiffuseParticle *p, Vector3D external_acceleration
     Vector3D num = Vector3D();
     double den = 0;
     for (auto q = begin(*(fake.neighbors)); q != end(*(fake.neighbors)); q++) {
-		num += ((*q)->position - (*q)->last_position)/dp->delta_t * cubic_spline_kernel((fake.position - (*q)->last_position), dp->h);
-        den += cubic_spline_kernel((fake.position - (*q)->last_position), dp->h);
+		num += ((*q)->position - (*q)->last_position)/dp->delta_t * cubic_spline_kernel(fake.position - (*q)->last_position, dp->h);
+        den += cubic_spline_kernel(fake.position - (*q)->last_position, dp->h);
 	}
     Vector3D avg_velocity = num / den;
     p->position = p->last_position + dp->delta_t * avg_velocity;
@@ -221,11 +213,14 @@ double ParentFluid::ta_potential(Particle *p) {
     double v_diff = 0;
     for (auto q = begin(*p->neighbors); q != end(*p->neighbors); q++) {
         Vector3D vij = p->velocity - (*q)->velocity;
-        Vector3D vij_hat = vij / vij.norm();
-        Vector3D xij = p->position - (*q)->position;
-        Vector3D xij_hat = xij / xij.norm();
-        v_diff += vij.norm() * (1 - dot(vij_hat, xij_hat)) * symm_kernel(xij, dp->h);
+		Vector3D xij = p->position - (*q)->position;
+		if (vij.norm() > EPS_F && xij.norm() > EPS_F) {
+			Vector3D vij_hat = vij / vij.norm();
+			Vector3D xij_hat = xij / xij.norm();
+			v_diff += vij.norm() * (1 - dot(vij_hat, xij_hat)) * symm_kernel(xij, dp->h);
+		}
     }
+	return v_diff;
     return clamp2(v_diff, dp->t_ta_min, dp->t_ta_max);
 }
 
@@ -236,7 +231,7 @@ void ParentFluid::set_normal(Particle *p) {
 	for (auto q = begin(*p->neighbors); q != end(*p->neighbors); q++) {
 		n += 1.0 / (*q)->rho * fluid->grad_spiky_kernel(p->position - (*q)->position, fp->h);
 	}
-//	std::cout << n.norm() << '\n';
+	
 	if (n.norm() > dp->l) {
 		// p is a surface particle
 		n.normalize();
