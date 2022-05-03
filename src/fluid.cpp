@@ -72,7 +72,7 @@ void Fluid::set_neighbors(Particle *p, double h) {
 				if (map.count(neighbor_key) > 0 && map[neighbor_key]->size() > 0) {
 					for (auto q = begin(*(map[neighbor_key])); q != end(*(map[neighbor_key])); q++) {
 						double dist = (p->position - (*q)->position).norm();
-						if (dist <= h*2 && dist > 0) {
+						if (dist <= h && dist > 0) {
 							(p->neighbors)->emplace_back(*q);
 						}
 					}

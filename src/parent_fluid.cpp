@@ -93,16 +93,18 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
         }
     }
 	
-//	#pragma omp parallel for
-//	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-//		fluid->set_neighbors(&*p, dp->h);
-//	}
+	fluid->build_spatial_map(dp->h);
+	
+	#pragma omp parallel for
+	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
+		fluid->set_neighbors(&*p, dp->h);
+	}
     
     // Step 5
 	// Set rho for all fluid particles
 	#pragma omp parallel for
 	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-		fluid->set_neighbors(&*p, dp->h);
+//		fluid->set_neighbors(&*p, dp->h);
 		double rho_i = 0;
 		for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
 			rho_i += fluid->poly6_kernel(p->position - (*q)->position, dp->h);
@@ -220,7 +222,7 @@ double ParentFluid::ta_potential(Particle *p) {
 			v_diff += vij.norm() * (1 - dot(vij_hat, xij_hat)) * symm_kernel(xij, dp->h);
 		}
     }
-	return v_diff;
+//	return v_diff;
     return clamp2(v_diff, dp->t_ta_min, dp->t_ta_max);
 }
 

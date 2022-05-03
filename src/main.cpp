@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 	fp->vorticity_eps = 0.0002;
 	fp->relaxation = 1600;
 
-	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 1000, 1000, 13);
+	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 45, 75, 13);
 	dp->t_k_min = 2;
 	ParentFluid *pf = new ParentFluid(4, 4, 4, 40, 60, 2.5, dp);
 	pf->fp = fp;
