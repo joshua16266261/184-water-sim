@@ -18,14 +18,22 @@ void write_fluid_pos_to_file(Fluid *f, string filename) {
 	file.close();
 }
 
-void write_diffuse_pos_to_file(ParentFluid *pf, string filename) {
+void write_diffuse_pos_to_file_helper(ParentFluid *pf, string filename, particle_type type) {
 	string s = "";
 	for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
-		s.append("(" + to_string((*p)->position[0]) + "," + to_string((*p)->position[1]) + "," + to_string((*p)->position[2]) + ")" + '\n');
+		if ((*p)->type == type) {
+			s.append("(" + to_string((*p)->position[0]) + "," + to_string((*p)->position[1]) + "," + to_string((*p)->position[2]) + ")" + '\n');
+		}
 	}
 	ofstream file(filename);
 	file << s;
 	file.close();
+}
+
+void write_diffuse_pos_to_file(ParentFluid *pf, string filename) {
+	write_diffuse_pos_to_file_helper(pf, "foam_" + filename, FOAM);
+	write_diffuse_pos_to_file_helper(pf, "bub_" + filename, BUBBLE);
+	write_diffuse_pos_to_file_helper(pf, "spray_" + filename, SPRAY);
 }
 
 int main(int argc, char **argv) {
@@ -93,7 +101,7 @@ int main(int argc, char **argv) {
 	fp->vorticity_eps = 0.0002;
 	fp->relaxation = 1600;
 
-	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 1000, 1000);
+	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 1000, 1000, 13);
 	ParentFluid *pf = new ParentFluid(4, 4, 4, 40, 60, 2.5, dp);
 	pf->fp = fp;
 

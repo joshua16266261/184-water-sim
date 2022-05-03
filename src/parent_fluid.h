@@ -28,10 +28,11 @@ struct DiffuseParameters {
     k_wc: max number of particles for wave crests per second
     k_ta: max number of particles for trapped air per second
     For default values, the paper runs their sim at 50 fps
+	 l: Threshold parameter for determining surface particles (see eq. 23 of https://matthias-research.github.io/pages/publications/sca03.pdf)
      */
 
-    DiffuseParameters(double h, double k_b, double k_d, double k_wc, double k_ta, double t_wc_min = 2, double t_wc_max = 8, double t_ta_min = 5, double t_ta_max = 20, double t_k_min = 5, double t_k_max = 50, double delta_t = 1.0/60, double lifetime = 1.0)
-        : h(h), delta_t(delta_t), k_b(k_b), k_d(k_d), k_wc(k_wc), k_ta(k_ta), t_wc_min(t_wc_min), t_wc_max(t_wc_max), t_ta_min(t_ta_min), t_ta_max(t_ta_min), t_k_min(t_k_min), t_k_max(t_k_max), lifetime(lifetime) {}
+    DiffuseParameters(double h, double k_b, double k_d, double k_wc, double k_ta, double l, double t_wc_min = 2, double t_wc_max = 8, double t_ta_min = 5, double t_ta_max = 20, double t_k_min = 5, double t_k_max = 50, double delta_t = 1.0/60, double lifetime = 1.0)
+        : h(h), delta_t(delta_t), k_b(k_b), k_d(k_d), k_wc(k_wc), k_ta(k_ta), t_wc_min(t_wc_min), t_wc_max(t_wc_max), t_ta_min(t_ta_min), t_ta_max(t_ta_max), t_k_min(t_k_min), t_k_max(t_k_max), lifetime(lifetime), l(l) {}
     ~DiffuseParameters() {}
 
     double h;
@@ -47,6 +48,7 @@ struct DiffuseParameters {
     double t_k_min;
     double t_k_max;
     double lifetime;
+	double l;
 
 };
 
@@ -85,6 +87,7 @@ struct ParentFluid {
     double ta_potential(Particle *p);
     double wc_potential(Particle *p);
     void generate(Particle *p, int n);
+	void set_normal(Particle *p);
 	
 	double symm_kernel(Vector3D x, double h) {
 		if (x.norm() <= h) {
@@ -99,7 +102,7 @@ struct ParentFluid {
 		if (q <= 1) {
 			return (1 - 1.5 * pow(q,2) + 0.75 * pow(q, 3)) * constant;
 		} else if (q <= 2) {
-			return 1.0/4 * pow(2-q, 3) * constant;
+			return 1.0 / 4 * pow(2 - q, 3) * constant;
 		} else {
 			return 0;
 		}
