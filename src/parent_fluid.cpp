@@ -53,21 +53,27 @@ ParentFluid::~ParentFluid() {
 
 
 void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<CollisionObject *> *collision_objects) {
-    //TODO: Off by one error, advection always 1 time step behind.
+    //FIXME: For some reason, directly calling simulate on the fluid is faster than having the ParentFluid do the simulation
+	//FIXME: Everywhere, there's a fluid
     //Step 1
-    fluid->simulate(fp, external_accelerations, collision_objects);
+//	std::cout << "Step 1" << '\n';
+//    fluid->simulate(fp, external_accelerations, collision_objects);
+	
+//	std::cout << "net accel" << '\n';
     Vector3D net_accel = Vector3D();
     for (auto p = begin(external_accelerations); p != end(external_accelerations); p++) {
         net_accel += *p;
     }
     
     //Step 2
+//	std::cout << "Step 2" << '\n';
     #pragma omp parallel for
     for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-        fluid->set_neighbors(&*p, fp->h);
+        fluid->set_neighbors(&*p, dp->h);
     }
     
     //Step 3
+//	std::cout << "Step 3" << '\n';
     #pragma omp parallel for
     for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles);) {
         if ((*p)->type == FOAM) {
@@ -81,6 +87,7 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
     }
     
     //Step 4
+//	std::cout << "Step 4" << '\n';
     #pragma omp parallel for
     for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles);) {
         bool dead = advect(*p, net_accel);
@@ -97,10 +104,12 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
     }
     
     //Step 5.1
+//	std::cout << "Step 5.1" << '\n';
     #pragma omp parallel for
     for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
         double I_k = k_potential(&*p);
         double I_ta = ta_potential(&*p);
+		std::cout << I_ta << '\n';
         double I_wc = wc_potential(&*p);
         int n_d = int(I_k * (dp->k_ta * I_ta + dp->k_wc * I_wc) * dp->delta_t);
         generate(&*p, n_d);
@@ -121,7 +130,7 @@ bool ParentFluid::advect(DiffuseParticle *p, Vector3D external_accelerations) {
 
 bool ParentFluid::advect_foam(DiffuseParticle *p, Vector3D external_accelerations) {
     Particle fake = Particle(p->last_position);
-    fluid->set_neighbors(&fake, fp->h);
+    fluid->set_neighbors(&fake, dp->h);
     if (fake.neighbors->size() == 0) {
         return true;
     }
@@ -144,7 +153,7 @@ bool ParentFluid::advect_spray(DiffuseParticle *p, Vector3D external_acceleratio
 
 bool ParentFluid::advect_bubbles(DiffuseParticle *p, Vector3D external_accelerations) {
     Particle fake = Particle(p->last_position);
-    fluid->set_neighbors(&fake, fp->h);
+    fluid->set_neighbors(&fake, dp->h);
     if (fake.neighbors->size() == 0) {
         return true;
     }
