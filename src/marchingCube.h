@@ -73,7 +73,7 @@ struct marchingCube {
 
 
     // The main march
-    void marchingCube::main_March(string filename);
+    void main_March(string filename);
 
     // The isotropic kernel function and isovalue function
     float isotropic_kernel(Vector3D r, float h);
@@ -90,7 +90,7 @@ struct marchingCube {
     string hash_position(Vector3D pos, float h);
 
     // Outputs the OBJ file for marching cube
-    void marchingCube::triToObj(string fName);
+    void triToObj(string fName);
 
     int edgeTable[256] = {
 0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,

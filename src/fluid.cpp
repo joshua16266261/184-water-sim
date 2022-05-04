@@ -28,39 +28,25 @@ Fluid::~Fluid() {
 }
 
 void Fluid::buildGrid() {
-    // Fill the rectangular prism with particles
+    // Fill the rectangular prism with corners at (0, 0, 0) and (length, width, height) with particles
     // Depth major order -> row major order
-	double random_offset_bound = 0.001;
+	
+	// Apply some randomness to the initial positions so the particles don't just stack on top of each other
+	double random_offset_bound = 0.001 * 0.25;
 	
 	particles.clear();
 	
 	double x, y, z;
     for (int depth = 0; depth < num_height_particles; depth++) {
         z = depth * height / (num_height_particles - 1);
-		z = z + 2;
         for (int row = 0; row < num_width_particles; row++) {
             y = row * width / (num_width_particles - 1);
-			y = y + 2;
 		    for (int col = 0; col < num_length_particles; col++) {
                 x = col * length / (num_length_particles - 1);
-				x = x + 2;
 
-				/*
-				cout << "X Y Z COORDINATES" << endl;
-				cout << "x: " ;
-				cout << x;
-				cout << " y: ";
-				cout << y;
-				cout << " z: ";
-				cout << z << endl;
-				*/
-				
-				// HERE CHANGE THE NUMERATOR NUMBER NEXT TO RAND MAX (0.5) TO GET THE NEGATIVE OFFSET GIVEN BY THE WALLS
-				// FOR EVERYTHING TO RENDER
-				// EVERYTHING IS NOT SUPOSED TO LOOK PERFECTLY SQUARE DUE TO THE RANDOM OFFSET BTW
-                particles.emplace_back(Particle(Vector3D(x + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound,
-														 y + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound,
-														 z + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound)));
+                particles.emplace_back(Particle(Vector3D(x + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 y + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound,
+														 z + double(rand()) / RAND_MAX * 2 * random_offset_bound - random_offset_bound)));
             }
 		}
 	}
