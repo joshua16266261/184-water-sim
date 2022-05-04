@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
 	fp->vorticity_eps = 0.005;
 	fp->relaxation = 5000;
 	fp->total_time = 1.;
-	fp->fps = 60.;
+	fp->fps = 10.;
 	// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
 	//#pragma omp parallel for
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 	Plane* back_wall = new Plane(Vector3D(0, 6, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject*> collision = vector<CollisionObject*>{ floor, left_wall, right_wall, front_wall, back_wall };
 
-	
+	/*
 	const string h = "--h";
 	const string delta_q = "--q";
 	const string k = "--k";
@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
 			fp->fps = stod(argv[i + 1]);
 		}
 	}
+	*/
 	
-
 	//	fp->h = 0.15;
 	//	fp->delta_q = 0.1 * fp->h * Vector3D(1, 0, 0);
 	//  fp->density = 1000;
@@ -106,9 +106,8 @@ int main(int argc, char** argv) {
 	//	fp->vorticity_eps = 0.0005;
 	//	fp->relaxation = 4000;
 
+/*
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
-		
-		
 		
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
@@ -119,7 +118,7 @@ int main(int argc, char** argv) {
 		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
 
-		Vector3D bDim = Vector3D(4., 4., 4.);
+		Vector3D bDim = Vector3D(8., 8., 8.);
 		Vector3D partDim = Vector3D(40., 40., 40.);
 		float search_radius = .01;
 		float particle_mass = 1.;
@@ -159,11 +158,8 @@ vector<Particle> readtxt(string filename) {
 
 int main(int argc, char** argv) {
 	// Just testing build
-	Fluid* f = new Fluid(2, 2, 2, 40, 40, 40);
+	Fluid* f = new Fluid(4., 4., 4., 40., 40., 40.);
 	f->buildGrid();
-	f->build_spatial_map(1.);
-
-
 
 	
 	//for (auto p = begin(f->particles); p != end(f->particles); p++) {
@@ -173,17 +169,17 @@ int main(int argc, char** argv) {
 
 	// Call the constructor to creat marchingCube object
 
-	Vector3D bDim = Vector3D(2., 2., 2.);
+	Vector3D bDim = Vector3D(8., 8., 8.);
 	Vector3D partDim = Vector3D(40., 40., 40.);
-	float h = 1.;
-	float search_radius = .03;
+	float h = 0.15;
+	float search_radius = .1;
 	float particle_mass = 1.;
 	float density = 1000.;
-	float step_size_multiplier = 0.5;
-	float isovalue = 0.1;
-	//vector<Particle> par_pos = readtxt("fluid_particles.txt");
+	float step_size_multiplier = 0.25;
+	float isovalue = 5.;
+	vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
-	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
+	marchingCube* m = new marchingCube(bDim, partDim, par_pos, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
 	m->main_March("test.obj");
 
 
