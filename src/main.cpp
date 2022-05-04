@@ -24,37 +24,42 @@ void write_pos_to_file(Fluid* f, string filename) {
 int main(int argc, char** argv) {
 	// Best params so far
 	Fluid *f = new Fluid(4, 4, 4, 40, 40, 40);
-	f->build_spatial_map(1.);
 
-	FluidParameters *fp = new FluidParameters(EPS_F, 2, 60, 5);
-	fp->h = 0.15;
-	fp->delta_q = 0.02 * fp->h * Vector3D(1, 1, 1);
-	fp->density = 1000;
-	fp->k = 0.001;
-	fp->c = 0.00025;
-	fp->vorticity_eps = 0.005;
-	fp->relaxation = 5000;
-	fp->total_time = 5.;
-	fp->fps = 60.;
+	//FluidParameters *fp = new FluidParameters(EPS_F, 2, 60, 5);
+	//fp->h = 0.15;
+	//fp->delta_q = 0.02 * fp->h * Vector3D(1, 1, 1);
+	//fp->density = 1000;
+	//fp->k = 0.001;
+	//fp->c = 0.00025;
+	//fp->vorticity_eps = 0.005;
+	//fp->relaxation = 5000;
+	//fp->total_time = 5.;
+	//fp->fps = 60.;
 	// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
+	
 	//#pragma omp parallel for
 	//for (auto p = begin(f->particles); p != end(f->particles); p++) {
 	//	p->position += Vector3D(0, 0, 4);
 	//}
 
 	// FluidParameters* fp = new FluidParameters(EPS_F, 3, 60, 5);
+	// 
+	// Default: 10 seconds at 60 fps
+	FluidParameters* fp = new FluidParameters(EPS_F, 10, 60, 5);
 
+	// Gravity
 	Vector3D g = Vector3D(0, 0, -9.81);
 	vector<Vector3D> accel = vector<Vector3D>{ g };
 
+
 	// They're doing this because they want to drop it but
 	// we only set our box to be positive dimensions so rip lol
-	Plane* floor = new Plane(Vector3D(0, 0, -2), Vector3D(0, 0, 1), 0);
-	Plane* left_wall = new Plane(Vector3D(-2, 0, 0), Vector3D(1, 0, 0), 0);
-	Plane* right_wall = new Plane(Vector3D(6, 0, 0), Vector3D(-1, 0, 0), 0);
-	Plane* front_wall = new Plane(Vector3D(0, -2, 0), Vector3D(0, 1, 0), 0);
-	Plane* back_wall = new Plane(Vector3D(0, 6, 0), Vector3D(0, -1, 0), 0);
+	Plane* floor = new Plane(Vector3D(0, 0, 0), Vector3D(0, 0, 1), 0);
+	Plane* left_wall = new Plane(Vector3D(0, 0, 0), Vector3D(1, 0, 0), 0);
+	Plane* right_wall = new Plane(Vector3D(8, 0, 0), Vector3D(-1, 0, 0), 0);
+	Plane* front_wall = new Plane(Vector3D(0, 0, 0), Vector3D(0, 1, 0), 0);
+	Plane* back_wall = new Plane(Vector3D(0, 8, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject*> collision = vector<CollisionObject*>{ floor, left_wall, right_wall, front_wall, back_wall };
 
 	/*
@@ -106,29 +111,51 @@ int main(int argc, char** argv) {
 	//	fp->vorticity_eps = 0.0005;
 	//	fp->relaxation = 4000;
 
+	fp->h = 0.15;
+	fp->delta_q = 0.1 * fp->h * Vector3D(1, 0, 0);
+	fp->density = 1000;
+	fp->k = 0.001;
+	fp->c = 0.0008;
+	fp->vorticity_eps = 0.0002;
+	fp->relaxation = 1600;
+	fp->total_time = 5;
+	fp->fps = 60;
 
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		
-		std::cout << frame << '\n';
-		f->simulate(fp, accel, &collision);
-		cout << "Simulated frame " + to_string(frame) << endl;
-
-		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
-
-		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
-
-		Vector3D bDim = Vector3D(8., 8., 8.);
+		Vector3D bDim = Vector3D(2., 2., 2.);
 		Vector3D partDim = Vector3D(40., 40., 40.);
 		float search_radius = .1;
 		float particle_mass = 1.;
-		float step_size_multiplier = 0.5;
-		float isovalue = 5.;
-		
+		float step_size_multiplier = 1.;
+		float isovalue = 0.1;
+
+
+		#pragma omp parallel for
+		for (auto p = begin(f->particles); p != end(f->particles); p++) {
+			p->position = p->position / 4.0;
+		}
+
 		marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, fp->h, search_radius,
 			particle_mass, fp->density, isovalue, step_size_multiplier);
 
 		m->main_March("Frame-" + to_string(frame) + ".obj");
+		cout << "" << endl;
 		cout << "Generated frame #" + to_string(frame) << endl;
+
+		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
+
+		#pragma omp parallel for
+		for (auto p = begin(f->particles); p != end(f->particles); p++) {
+			p->position = p->position * 4.0;
+		}
+
+		std::cout << frame << '\n';
+		f->simulate(fp, accel, &collision);
+		cout << "Simulated frame " + to_string(frame) << endl;
+
+		// write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
+		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 	}
 
 	return 0;
@@ -166,19 +193,19 @@ int main(int argc, char** argv) {
 	//}
 	
 
-	// Call the constructor to creat marchingCube object
+	// Call the constructor to create marchingCube object
 
 	Vector3D bDim = Vector3D(8., 8., 8.);
 	Vector3D partDim = Vector3D(40., 40., 40.);
 	float h = 0.15;
-	float search_radius = .1;
+	float search_radius = .2;
 	float particle_mass = 1.;
 	float density = 1000.;
-	float step_size_multiplier = 0.5;
-	float isovalue = 5.;
-	vector<Particle> par_pos = readtxt("fluid_particles.txt");
+	float step_size_multiplier = 0.20;
+	float isovalue = 10.;
+	//vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
-	marchingCube* m = new marchingCube(bDim, partDim, par_pos, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
+	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
 	m->main_March("test.obj");
 
 
