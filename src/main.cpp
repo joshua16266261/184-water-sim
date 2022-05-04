@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
 	float step_size_multiplier = 0.25;
 	float isovalue = 0.01;
 
+	// Simulate all frames
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 
