@@ -80,7 +80,7 @@ struct marchingCube {
     float isovalue(Vector3D pos, float h);
 
     // Fills an individual cube
-    void createCube(Cube &cube, Vector3D index);
+    void createCube(Cube cube, Vector3D index);
 
     // Functions for triangle generation
     int Polygonise(Cube cube, double isolevel);

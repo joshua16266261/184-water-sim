@@ -91,7 +91,7 @@ for (int depth = 0; depth <= ceil(m_particle_dimensions.z / (m_step_size_multipl
         float y = (row * box_dimensions.y * m_step_size_multiplier / (m_particle_dimensions.y - 1)) - 2.2;
         for (int col = 0; col <= ceil(m_particle_dimensions.x / (m_step_size_multiplier)); col++) {
             float x = (col * box_dimensions.x * m_step_size_multiplier / (m_particle_dimensions.x - 1)) - 2.2;
-            Cube& marchCube = Cube();
+            Cube marchCube = Cube();
 
             // Will create a empty cube pass in top left positional index of the cube 
             // Iterate over cube creation and then just emplace back after you fill it up
@@ -206,7 +206,7 @@ string marchingCube::hash_position(Vector3D pos, float h) {
 
 // Create the Marching Cube Grid (each sub-cube within the whole space)
 // Inputs: the index of the cube in all directions (i.e. 1 in X, 4 in Y, and 2 in Z)
-void marchingCube::createCube(Cube &cube, Vector3D index) {
+void marchingCube::createCube(Cube cube, Vector3D index) {
    
     // Cube placement in verticies is based on http://paulbourke.net/geometry/polygonise/polygonise1.gif
     // Configuration:

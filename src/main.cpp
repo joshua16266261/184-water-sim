@@ -34,8 +34,8 @@ int main(int argc, char** argv) {
 	fp->c = 0.00025;
 	fp->vorticity_eps = 0.005;
 	fp->relaxation = 5000;
-	fp->total_time = 1.;
-	fp->fps = 30.;
+	fp->total_time = 5.;
+	fp->fps = 60.;
 	// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
 	//#pragma omp parallel for
