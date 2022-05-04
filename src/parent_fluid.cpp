@@ -34,37 +34,17 @@ ParentFluid::ParentFluid(double length, double width, double height, int particl
 ParentFluid::~ParentFluid() {
     this->diffuse_particles->clear();
 }
-/*
-1.
-2. For all particles in fluid:
-    Find neighbors
-3. For all diffuse particles:
-    Calculate dissolution
-4. For all diffuse particles:
-    Calculate advection
-    Collision detection
-    Update velocity and position
-5. For all particles in fluid:
-    Calculate trapped air, wave crest, kinetic energy potential,
-    generate diffuse particles by sampling in cyl.,
-    set foam lifetime proportional to generation potential
-    
- */
-
 
 void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<CollisionObject *> *collision_objects) {
-    // FIXME: For some reason, directly calling simulate on the fluid is faster than having the ParentFluid do the simulation
-	
-    // Step 1: Simulate 1 step of fluid, calulate total acceleration
-//    fluid->simulate(fp, external_accelerations, collision_objects);
     Vector3D net_accel = Vector3D();
     for (auto p = begin(external_accelerations); p != end(external_accelerations); p++) {
         net_accel += *p;
     }
 	
+	// Build spatial map with width 2h for advection
 	fluid->build_spatial_map(2 * dp->h);
     
-    // Step 3
+    // Dissolution
     #pragma omp parallel for
     for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles); ) {
         if ((*p)->type == FOAM) {
@@ -79,7 +59,7 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
 		}
     }
     
-    // Step 4: Advection and dissolution
+    // Advection
     #pragma omp parallel for
     for (auto p = begin(*diffuse_particles); p != end(*diffuse_particles); ) {
         bool dead = advect(*p, net_accel);
@@ -93,6 +73,7 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
         }
     }
 	
+	// Rebuild spatial map with width h for generation
 	fluid->build_spatial_map(dp->h);
 	
 	#pragma omp parallel for
@@ -100,11 +81,9 @@ void ParentFluid::simulate_step(vector<Vector3D> external_accelerations, vector<
 		fluid->set_neighbors(&*p, dp->h);
 	}
     
-    // Step 5
 	// Set rho for all fluid particles
 	#pragma omp parallel for
 	for (auto p = begin(fluid->particles); p != end(fluid->particles); p++) {
-//		fluid->set_neighbors(&*p, dp->h);
 		double rho_i = 0;
 		for (auto q = begin(*(p->neighbors)); q != end(*(p->neighbors)); q++) {
 			rho_i += fluid->poly6_kernel(p->position - (*q)->position, dp->h);
@@ -222,7 +201,6 @@ double ParentFluid::ta_potential(Particle *p) {
 			v_diff += vij.norm() * (1 - dot(vij_hat, xij_hat)) * symm_kernel(xij, dp->h);
 		}
     }
-//	return v_diff;
     return clamp2(v_diff, dp->t_ta_min, dp->t_ta_max);
 }
 
@@ -270,7 +248,7 @@ double ParentFluid::wc_potential(Particle *p) {
 }
 
 void ParentFluid::generate(Particle *p, int n) {
-	// Get e_1 and e_2 as in Fig. 3 of Ihmsen et al. by Gram-Schmidt
+	// Get e_1 and e_2 as in Fig. 3 of Ihmsen et al. by performing Gram-Schmidt
     Vector3D e1;
     if (p->velocity.x != 0) {
         e1 = Vector3D(1,0,0) - p->velocity.x / p->velocity.norm2() * p->velocity;
@@ -292,7 +270,6 @@ void ParentFluid::generate(Particle *p, int n) {
         double xh = double(rand()) / RAND_MAX;
         double h = xh * (dp->delta_t * p->velocity).norm();
 		
-//        Vector3D xd = p->last_position + r * cos(theta) * e1 + r * sin(theta) * e2 + h * p->velocity / p->velocity.norm();
 		Vector3D xd = p->position + r * cos(theta) * e1 + r * sin(theta) * e2 + h * p->velocity / p->velocity.norm();
         Vector3D vd = r * cos(theta) * e1 + r * sin(theta) * e2 + p->velocity;
         DiffuseParticle *d = new DiffuseParticle(xd, vd, BUBBLE);
