@@ -58,9 +58,9 @@ void Fluid::buildGrid() {
 				// HERE CHANGE THE NUMERATOR NUMBER NEXT TO RAND MAX (0.5) TO GET THE NEGATIVE OFFSET GIVEN BY THE WALLS
 				// FOR EVERYTHING TO RENDER
 				// EVERYTHING IS NOT SUPOSED TO LOOK PERFECTLY SQUARE DUE TO THE RANDOM OFFSET BTW
-                particles.emplace_back(Particle(Vector3D(x + double(rand()) / RAND_MAX * (5.) * random_offset_bound - random_offset_bound,
-														 y + double(rand()) / RAND_MAX * (5.) * random_offset_bound - random_offset_bound,
-														 z + double(rand()) / RAND_MAX * (5.) * random_offset_bound - random_offset_bound)));
+                particles.emplace_back(Particle(Vector3D(x + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound,
+														 y + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound,
+														 z + double(rand()) / RAND_MAX * (0.25) * random_offset_bound - random_offset_bound)));
             }
 		}
 	}
