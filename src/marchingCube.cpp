@@ -47,7 +47,7 @@ m_particle_mass = particle_mass;
 m_density = density;
 m_step_size_multiplier = step_size_multiplier;
 // This variable set the size of the box hash used to speedup
-box_hash_size = .12
+box_hash_size = .01
 ;
 
 
@@ -86,11 +86,11 @@ m_unit_dimensions = Vector3D(box_dimensions.x * (m_step_size_multiplier) / (m_pa
 // have to expand the box to fit the particles (like -2, -2, -2 to 2, 2, 2, or whereever the walls are etc.)
 float x, y, z;
 for (int depth = 0; depth <= ceil(m_particle_dimensions.z / (m_step_size_multiplier)); depth++) {
-    float z = (depth * box_dimensions.z * m_step_size_multiplier / (m_particle_dimensions.z - 1));
+    float z = (depth * box_dimensions.z * m_step_size_multiplier / (m_particle_dimensions.z - 1)) - 0.25;
     for (int row = 0; row <= ceil(m_particle_dimensions.y / (m_step_size_multiplier)); row++) {
-        float y = (row * box_dimensions.y * m_step_size_multiplier / (m_particle_dimensions.y - 1));
+        float y = (row * box_dimensions.y * m_step_size_multiplier / (m_particle_dimensions.y - 1)) - 0.25;
         for (int col = 0; col <= ceil(m_particle_dimensions.x / (m_step_size_multiplier)); col++) {
-            float x = (col * box_dimensions.x * m_step_size_multiplier / (m_particle_dimensions.x - 1));
+            float x = (col * box_dimensions.x * m_step_size_multiplier / (m_particle_dimensions.x - 1)) - 0.25;
             Cube marchCube = Cube();
 
             // Will create a empty cube pass in top left positional index of the cube 

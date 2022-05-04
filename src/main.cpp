@@ -122,21 +122,25 @@ int main(int argc, char** argv) {
 	fp->fps = 60;
 
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
-		
-		Vector3D bDim = Vector3D(2., 2., 2.);
+		cout << "Staring on frame #: " + to_string(frame) << endl;
+
+		Vector3D bDim = Vector3D(2.5, 2.5, 2.5);
 		Vector3D partDim = Vector3D(40., 40., 40.);
-		float search_radius = .1;
+		float search_radius = .06;
 		float particle_mass = 1.;
-		float step_size_multiplier = 1.;
-		float isovalue = 0.1;
+		float step_size_multiplier = 0.25;
+		float isovalue = 0.01;
 
 
+		vector<Particle> divided_particles_4 = f->particles;
 		#pragma omp parallel for
-		for (auto p = begin(f->particles); p != end(f->particles); p++) {
+		for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
 			p->position = p->position / 4.0;
 		}
 
-		marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, fp->h, search_radius,
+		cout << "Done Splitting on frame #: " + to_string(frame) << endl;
+
+		marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
 			particle_mass, fp->density, isovalue, step_size_multiplier);
 
 		m->main_March("Frame-" + to_string(frame) + ".obj");
@@ -145,10 +149,10 @@ int main(int argc, char** argv) {
 
 		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
 
-		#pragma omp parallel for
-		for (auto p = begin(f->particles); p != end(f->particles); p++) {
-			p->position = p->position * 4.0;
-		}
+//		#pragma omp parallel for
+//		for (auto p = begin(f->particles); p != end(f->particles); p++) {
+//			p->position = p->position * 4.0;
+//		}
 
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
@@ -184,25 +188,28 @@ vector<Particle> readtxt(string filename) {
 
 int main(int argc, char** argv) {
 	// Just testing build
-	Fluid* f = new Fluid(4., 4., 4., 40., 40., 40.);
-	f->buildGrid();
+	Fluid* f = new Fluid(2, 2, 2, 40, 40, 40);
+	//Fluid* f = new Fluid(10, 10, 10, 10, 10, 10);
 
+	//write_pos_to_file(f, "floor.txt");
+
+
+	/*
+	for (auto p = begin(f->particles); p != end(f->particles); p++) {
+		std::cout << p->position << '\n';
+	}
 	
-	//for (auto p = begin(f->particles); p != end(f->particles); p++) {
-	//	std::cout << p->position << '\n';
-	//}
-	
 
-	// Call the constructor to create marchingCube object
+	// Call the constructor to creat marchingCube object
 
-	Vector3D bDim = Vector3D(8., 8., 8.);
+	Vector3D bDim = Vector3D(2.5, 2.5, 2.5);
 	Vector3D partDim = Vector3D(40., 40., 40.);
-	float h = 0.15;
-	float search_radius = .2;
+	float h = .15;
+	float search_radius = .06;
 	float particle_mass = 1.;
 	float density = 1000.;
-	float step_size_multiplier = 0.20;
-	float isovalue = 10.;
+	float step_size_multiplier = 0.25;
+	float isovalue = 0.01;
 	//vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
 	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
