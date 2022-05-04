@@ -149,6 +149,7 @@ int main(int argc, char** argv) {
 
 		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
 
+		delete m;
 //		#pragma omp parallel for
 //		for (auto p = begin(f->particles); p != end(f->particles); p++) {
 //			p->position = p->position * 4.0;
