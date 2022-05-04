@@ -8,7 +8,7 @@
 
 using namespace std;
 
-/*
+
 void write_pos_to_file(Fluid* f, string filename) {
 	string s = "";
 	for (auto p = begin(f->particles); p != end(f->particles); p++) {
@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
 	fp->vorticity_eps = 0.005;
 	fp->relaxation = 5000;
 	fp->total_time = 1.;
-	fp->fps = 10.;
+	fp->fps = 30.;
 	// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
 	//#pragma omp parallel for
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
 	//	fp->vorticity_eps = 0.0005;
 	//	fp->relaxation = 4000;
 
-/*
+
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		
 		std::cout << frame << '\n';
@@ -117,13 +117,12 @@ int main(int argc, char** argv) {
 
 		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
-
 		Vector3D bDim = Vector3D(8., 8., 8.);
 		Vector3D partDim = Vector3D(40., 40., 40.);
-		float search_radius = .01;
+		float search_radius = .1;
 		float particle_mass = 1.;
 		float step_size_multiplier = 0.5;
-		float isovalue = 0.001;
+		float isovalue = 5.;
 		
 		marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, fp->h, search_radius,
 			particle_mass, fp->density, isovalue, step_size_multiplier);
@@ -134,10 +133,10 @@ int main(int argc, char** argv) {
 
 	return 0;
 }
-*/
 
 
 
+/*
 /////////////////////////////
 // CODE FOR TESTING IT OUT //
 /////////////////////////////
@@ -175,7 +174,7 @@ int main(int argc, char** argv) {
 	float search_radius = .1;
 	float particle_mass = 1.;
 	float density = 1000.;
-	float step_size_multiplier = 0.25;
+	float step_size_multiplier = 0.5;
 	float isovalue = 5.;
 	vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
@@ -187,3 +186,4 @@ int main(int argc, char** argv) {
 	//cout << par_pos.size() << "\n";
 	return 0;
 }
+*/
