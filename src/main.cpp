@@ -124,41 +124,45 @@ int main(int argc, char** argv) {
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Staring on frame #: " + to_string(frame) << endl;
 
-		Vector3D bDim = Vector3D(2.5, 2.5, 2.5);
-		Vector3D partDim = Vector3D(40., 40., 40.);
-		float search_radius = .06;
-		float particle_mass = 1.;
-		float step_size_multiplier = 0.25;
-		float isovalue = 0.01;
+
+		if (frame % 2 == 0) {
+
+			Vector3D bDim = Vector3D(2.5, 2.5, 2.5);
+			Vector3D partDim = Vector3D(40., 40., 40.);
+			float search_radius = .06;
+			float particle_mass = 1.;
+			float step_size_multiplier = 0.25;
+			float isovalue = 0.01;
 
 
-		vector<Particle> divided_particles_4 = f->particles;
-		#pragma omp parallel for
-		for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
-			p->position = p->position / 4.0;
+			vector<Particle> divided_particles_4 = f->particles;
+			#pragma omp parallel for
+			for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
+				p->position = p->position / 4.0;
+			}
+
+			cout << "Done Splitting on frame #: " + to_string(frame) << endl;
+
+			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
+				particle_mass, fp->density, isovalue, step_size_multiplier);
+
+			m->main_March("Frame-" + to_string(frame) + ".obj");
+			cout << "" << endl;
+			cout << "Generated frame #" + to_string(frame) << endl;
+
+			write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
+
+			delete m;
 		}
-
-		cout << "Done Splitting on frame #: " + to_string(frame) << endl;
-
-		marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
-			particle_mass, fp->density, isovalue, step_size_multiplier);
-
-		m->main_March("Frame-" + to_string(frame) + ".obj");
-		cout << "" << endl;
-		cout << "Generated frame #" + to_string(frame) << endl;
-
-		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
-
-		delete m;
-//		#pragma omp parallel for
-//		for (auto p = begin(f->particles); p != end(f->particles); p++) {
-//			p->position = p->position * 4.0;
-//		}
+		else {
+			cout << "Frame #: " + to_string(frame) + " skipped." << endl;
+		}
 
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
 		cout << "Simulated frame " + to_string(frame) << endl;
 
+		cout << " " << endl;
 		// write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
 		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 	}
