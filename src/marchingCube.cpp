@@ -47,7 +47,7 @@ m_particle_mass = particle_mass;
 m_density = density;
 m_step_size_multiplier = step_size_multiplier;
 // This variable set the size of the box hash used to speedup
-box_hash_size = .03
+box_hash_size = .04
 ;
 
 
@@ -83,6 +83,7 @@ m_unit_dimensions = Vector3D(box_dimensions.x * (m_step_size_multiplier) / (m_pa
 //              z = depth * box_dim.z * [(5)] / (m_part_dim.z - 1)
 // where we want to increase the step size 5 times
 
+// have to expand the box to fit the particles (like -2, -2, -2 to 2, 2, 2, or whereever the walls are etc.)
 float x, y, z;
 for (int depth = 0; depth <= ceil(m_particle_dimensions.z / (m_step_size_multiplier)); depth++) {
     float z = depth * box_dimensions.z * m_step_size_multiplier / (m_particle_dimensions.z - 1);
@@ -222,15 +223,16 @@ void marchingCube::createCube(Cube &cube, Vector3D index) {
     // The way I did this was that to go from one verticie to another of the cube you just add 1 unit length
     // Can do this visually, checking the picture aswell to do re-verify this works
     // NOTE TO SELF FOR SANITY: IF YOU USE A CLASS VAR NAME DO NOT RE-INITIALIZE IT OR ELSE IT WILL GIVE YOU 0  AAAAAAAAAAAAAAA
-
-    cube.vertices[0] = Vector3D(index.x, index.y - unit_Y, index.z);
-    cube.vertices[1] = Vector3D(index.x + unit_X, index.y - unit_Y, index.z);
-    cube.vertices[2] = Vector3D(index.x + unit_X, index.y - unit_Y, index.z + unit_Z);
-    cube.vertices[3] = Vector3D(index.x, index.y - unit_Y, index.z + unit_Z);
+    // FIXED ACCORING TO https://i.stack.imgur.com/oLUUQ.png
+    // 
+    cube.vertices[0] = Vector3D(index.x, index.y, index.z - unit_Z);
+    cube.vertices[1] = Vector3D(index.x + unit_X, index.y, index.z - unit_Z);
+    cube.vertices[2] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z - unit_Z);
+    cube.vertices[3] = Vector3D(index.x, index.y + unit_Y, index.z - unit_Z);
     cube.vertices[4] = index;
     cube.vertices[5] = Vector3D(index.x + unit_X, index.y, index.z);
-    cube.vertices[6] = Vector3D(index.x + unit_X, index.y, index.z + unit_Z);
-    cube.vertices[7] = Vector3D(index.x, index.y, index.z + unit_Z);
+    cube.vertices[6] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z);
+    cube.vertices[7] = Vector3D(index.x, index.y + unit_Y, index.z);
     
     /*
     cout << "CUBE vertices" << endl;

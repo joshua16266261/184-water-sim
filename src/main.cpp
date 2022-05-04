@@ -8,7 +8,7 @@
 
 using namespace std;
 
-
+/*
 void write_pos_to_file(Fluid* f, string filename) {
 	string s = "";
 	for (auto p = begin(f->particles); p != end(f->particles); p++) {
@@ -24,6 +24,7 @@ void write_pos_to_file(Fluid* f, string filename) {
 int main(int argc, char** argv) {
 	// Best params so far
 	Fluid *f = new Fluid(4, 4, 4, 40, 40, 40);
+	f->build_spatial_map(1.);
 
 	FluidParameters *fp = new FluidParameters(EPS_F, 2, 60, 5);
 	fp->h = 0.15;
@@ -37,16 +38,18 @@ int main(int argc, char** argv) {
 	fp->fps = 60.;
 	// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
-	#pragma omp parallel for
-	for (auto p = begin(f->particles); p != end(f->particles); p++) {
-		p->position += Vector3D(0, 0, 4);
-	}
+	//#pragma omp parallel for
+	//for (auto p = begin(f->particles); p != end(f->particles); p++) {
+	//	p->position += Vector3D(0, 0, 4);
+	//}
 
 	// FluidParameters* fp = new FluidParameters(EPS_F, 3, 60, 5);
 
 	Vector3D g = Vector3D(0, 0, -9.81);
 	vector<Vector3D> accel = vector<Vector3D>{ g };
 
+	// They're doing this because they want to drop it but
+	// we only set our box to be positive dimensions so rip lol
 	Plane* floor = new Plane(Vector3D(0, 0, -2), Vector3D(0, 0, 1), 0);
 	Plane* left_wall = new Plane(Vector3D(-2, 0, 0), Vector3D(1, 0, 0), 0);
 	Plane* right_wall = new Plane(Vector3D(6, 0, 0), Vector3D(-1, 0, 0), 0);
@@ -54,7 +57,7 @@ int main(int argc, char** argv) {
 	Plane* back_wall = new Plane(Vector3D(0, 6, 0), Vector3D(0, -1, 0), 0);
 	vector<CollisionObject*> collision = vector<CollisionObject*>{ floor, left_wall, right_wall, front_wall, back_wall };
 
-	/*
+	
 	const string h = "--h";
 	const string delta_q = "--q";
 	const string k = "--k";
@@ -92,7 +95,7 @@ int main(int argc, char** argv) {
 			fp->fps = stod(argv[i + 1]);
 		}
 	}
-	*/
+	
 
 	//	fp->h = 0.15;
 	//	fp->delta_q = 0.1 * fp->h * Vector3D(1, 0, 0);
@@ -104,16 +107,19 @@ int main(int argc, char** argv) {
 	//	fp->relaxation = 4000;
 
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
+		
+		
+		
 		std::cout << frame << '\n';
 		f->simulate(fp, accel, &collision);
 		cout << "Simulated frame " + to_string(frame) << endl;
 
-		// write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
+		write_pos_to_file(f, "floor " + to_string(frame) + ".txt");
 
 		// Fluid* f = new Fluid(4, 4, 4, 40, 40, 40);
 
 
-		Vector3D bDim = Vector3D(2., 2., 2.);
+		Vector3D bDim = Vector3D(4., 4., 4.);
 		Vector3D partDim = Vector3D(40., 40., 40.);
 		float search_radius = .01;
 		float particle_mass = 1.;
@@ -123,16 +129,16 @@ int main(int argc, char** argv) {
 		marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, fp->h, search_radius,
 			particle_mass, fp->density, isovalue, step_size_multiplier);
 
-		m->main_March("Frame-" + to_string(frame));
+		m->main_March("Frame-" + to_string(frame) + ".obj");
 		cout << "Generated frame #" + to_string(frame) << endl;
 	}
 
 	return 0;
 }
+*/
 
 
 
-/*
 /////////////////////////////
 // CODE FOR TESTING IT OUT //
 /////////////////////////////
@@ -154,7 +160,6 @@ vector<Particle> readtxt(string filename) {
 int main(int argc, char** argv) {
 	// Just testing build
 	Fluid* f = new Fluid(2, 2, 2, 40, 40, 40);
-	//Fluid* f = new Fluid(10, 10, 10, 10, 10, 10);
 	f->buildGrid();
 	f->build_spatial_map(1.);
 
@@ -171,14 +176,14 @@ int main(int argc, char** argv) {
 	Vector3D bDim = Vector3D(2., 2., 2.);
 	Vector3D partDim = Vector3D(40., 40., 40.);
 	float h = 1.;
-	float search_radius = .02;
+	float search_radius = .03;
 	float particle_mass = 1.;
 	float density = 1000.;
 	float step_size_multiplier = 0.5;
-	float isovalue = 0.001;
-	vector<Particle> par_pos = readtxt("fluid_particles.txt");
+	float isovalue = 0.1;
+	//vector<Particle> par_pos = readtxt("fluid_particles.txt");
 
-	marchingCube* m = new marchingCube(bDim, partDim, par_pos, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
+	marchingCube* m = new marchingCube(bDim, partDim, f->particles, f->map, h, search_radius, particle_mass, density, isovalue, step_size_multiplier);
 	m->main_March("test.obj");
 
 
@@ -186,4 +191,3 @@ int main(int argc, char** argv) {
 	//cout << par_pos.size() << "\n";
 	return 0;
 }
-*/
