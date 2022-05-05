@@ -16,6 +16,7 @@ public:
       : point(point), normal(normal.unit()), friction(friction) {}
 
   void collide(Particle &p, double cr, double delta_t);
+  void collide(DiffuseParticle &p);
 
   Vector3D point;
   Vector3D normal;

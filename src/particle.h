@@ -30,6 +30,9 @@ struct Particle {
 	double lambda; // As calculated in line 10 of Algorithm 1
 	Vector3D omega;
 	Vector3D forces;
+	double rho;
+	Vector3D normal;
 };
+
 
 #endif /* PARTICLE_H */

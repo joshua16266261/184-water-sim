@@ -15,6 +15,7 @@ public:
         friction(friction), m_sphere_mesh(Misc::SphereMesh(num_lat, num_lon)) {}
 	
   void collide(Particle &p, double cr, double delta_t);
+  void collide(DiffuseParticle &p);
 
 private:
   Vector3D origin;

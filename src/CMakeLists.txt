@@ -6,6 +6,12 @@ set(CLOTHSIM_VIEWER_SOURCE
     fluid.cpp
     fluid.h
     particle.h
+    diffuse.h
+    parent_fluid.h
+    parent_fluid.cpp
+    collision/collisionObject.h
+    collision/sphere.h
+    collision/plane.h
 
     # Marching Cubes
     marchingCube.cpp

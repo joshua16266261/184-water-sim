@@ -1,4 +1,5 @@
 #include "fluid.h"
+#include "parent_fluid.h"
 #include "particle.h"
 #include "collision/plane.h"
 #include "marchingCube.h"
@@ -78,17 +79,31 @@ int main(int argc, char** argv) {
 	float particle_mass = 1.;
 	float step_size_multiplier = 0.25;
 	float isovalue = 0.01;
+	
+	// Diffuse particle simulation parameters for falling cube
+	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 200, 60, 13);
+	dp->t_k_min = 5;
+	dp->t_k_max = 60;
+	ParentFluid *pf = new ParentFluid(4, 4, 4, 40, 60, 2.5, dp);
+	pf->fp = fp;
 
 	// Simulate all frames
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 
 		if (frame % downsample_rate == 0) {
+//		if (frame == 180) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			vector<Particle> divided_particles_4 = f->particles;
 			#pragma omp parallel for
 			for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
 				p->position = p->position / 4.0;
+			}
+			
+			vector<Particle> divided_diffuse_particles_4 = vector<Particle>();
+			for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
+				Particle part = Particle((*p)->position);
+				divided_diffuse_particles_4.emplace_back(part);
 			}
 
 			cout << "Done Splitting on frame #: " + to_string(frame) << endl;
@@ -96,8 +111,13 @@ int main(int argc, char** argv) {
 			// Perform marching cubes and generate .obj file
 			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
 				particle_mass, fp->density, isovalue, step_size_multiplier);
+			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius,
+				particle_mass, fp->density, isovalue, step_size_multiplier);
+			diffuse_m->box_hash_size = 0.1;
+			//isovalue, search_radius, box_hash_size, step_size_multiplier
 
 			m->main_March("Frame-" + to_string(frame) + ".obj");
+			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
 			cout << "" << endl;
 			cout << "Generated frame #" + to_string(frame) << endl;
 
@@ -109,7 +129,11 @@ int main(int argc, char** argv) {
 
 		// Simulate particle positions for next time step
 		std::cout << frame << '\n';
+		
+		// Simulate 1 step
 		f->simulate(fp, accel, &collision);
+		pf->fluid = f;
+		pf->simulate_step(accel, &collision);
 		cout << "Simulated frame " + to_string(frame) << endl;
 
 		cout << " " << endl;

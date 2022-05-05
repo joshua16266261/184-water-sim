@@ -158,8 +158,10 @@ void Fluid::vorticity(Particle *p, double h, double delta_t, double vorticity_ep
 	if (p->omega.norm() > EPS_F) {
 		for (auto pj = begin(*p->neighbors); pj != end(*p->neighbors); pj++) {
 			Vector3D r = (*pj)->position - p->position;
-			double d_omega = (*pj)->omega.norm() - p->omega.norm();
-			N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+            if (r.norm() <= h) {
+                double d_omega = (*pj)->omega.norm() - p->omega.norm();
+                N += Vector3D(d_omega / r.x, d_omega / r.y, d_omega / r.z);
+            }
 		}
 
 		if (N.norm() > EPS_F) {
@@ -233,7 +235,6 @@ void Fluid::simulate(FluidParameters *fp,
 			// Update position (line 17 of Algorithm 1)
 			p->position += p->delta_p;
 		}
-		
     }
 	
 	#pragma omp parallel for
