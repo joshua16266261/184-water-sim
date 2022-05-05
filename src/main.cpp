@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	// Default: 4x4x4 cube with 40x40x40 particles
 	Fluid *f = new Fluid(4, 4, 4, 40, 40, 40);
 
-//	// Falling cube: shift starting cube to have corners (2, 2, 2) and (6, 6, 6)
+	// Falling cube: shift starting cube to have corners (2, 2, 2) and (6, 6, 6)
 	#pragma omp parallel for
 	for (auto p = begin(f->particles); p != end(f->particles); p++) {
 		p->position += Vector3D(2, 2, 2);
@@ -101,9 +101,6 @@ int main(int argc, char** argv) {
 	float isovalue = 0.01;
 	
 	// Diffuse particle simulation parameters for falling cube
-//	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 200, 60, 13);
-//	dp->t_k_min = 5;
-//	dp->t_k_max = 60;
 	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 200, 60, 13);
 	dp->t_k_min = 3;
 	dp->t_k_max = 40;
@@ -116,6 +113,7 @@ int main(int argc, char** argv) {
 
 		if (frame % downsample_rate == 0) {
 //		if (frame == 240) {
+//		if (frame == 60) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			vector<Particle> divided_particles_4 = f->particles;
 			#pragma omp parallel for
@@ -139,18 +137,8 @@ int main(int argc, char** argv) {
 //			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.001,
 //				particle_mass, fp->density, 0.001, step_size_multiplier, 0.01);
 			//isovalue, search_radius, box_hash_size, step_size_multiplier
-			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius, particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
-			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
-			delete diffuse_m;
-			
-//			diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.0005,
-//				particle_mass, fp->density, 0.0005, step_size_multiplier, 0.001);
-//			diffuse_m->main_March("2DiffuseFrame-" + to_string(frame) + ".obj");
-//			delete diffuse_m;
-//
-//			diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.0001,
-//				particle_mass, fp->density, 0.0001, step_size_multiplier, 0.0005);
-//			diffuse_m->main_March("3DiffuseFrame-" + to_string(frame) + ".obj");
+//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius, particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
+//			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
 //			delete diffuse_m;
 			
 			cout << "" << endl;
