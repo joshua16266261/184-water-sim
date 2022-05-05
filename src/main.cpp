@@ -10,16 +10,16 @@
 using namespace std;
 
 
-//void write_pos_to_file(Fluid* f, string filename) {
-//	// FOR TESTING ONLY
-//	string s = "";
-//	for (auto p = begin(f->particles); p != end(f->particles); p++) {
-//		s.append("(" + to_string(p->position[0]) + "," + to_string(p->position[1]) + "," + to_string(p->position[2]) + ")" + '\n');
-//	}
-//	ofstream file(filename);
-//	file << s;
-//	file.close();
-//}
+void write_pos_to_file(Fluid* f, string filename) {
+	// FOR TESTING ONLY
+	string s = "";
+	for (auto p = begin(f->particles); p != end(f->particles); p++) {
+		s.append("(" + to_string(p->position[0]) + "," + to_string(p->position[1]) + "," + to_string(p->position[2]) + ")" + '\n');
+	}
+	ofstream file(filename);
+	file << s;
+	file.close();
+}
 
 void write_diffuse_pos_to_file_helper(ParentFluid *pf, string filename, particle_type type) {
 	// Write all diffuse particle positions of particle_type type to a text file
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	// Default: 4x4x4 cube with 40x40x40 particles
 	Fluid *f = new Fluid(4, 4, 4, 40, 40, 40);
 
-	// Falling cube: shift starting cube to have corners (2, 2, 2) and (6, 6, 6)
+//	// Falling cube: shift starting cube to have corners (2, 2, 2) and (6, 6, 6)
 	#pragma omp parallel for
 	for (auto p = begin(f->particles); p != end(f->particles); p++) {
 		p->position += Vector3D(2, 2, 2);
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 	const string fps = "--fps";
 	// Alternatively, set total_time and output_fps
 	double total_time = 5;
-	int output_fps = 20;
+	int output_fps = 10;
 	for (int i = 1; i < argc - 1; i++) {
 		if (argv[i] == time) {
 			total_time = stod(argv[i + 1]);
@@ -101,26 +101,28 @@ int main(int argc, char** argv) {
 	float isovalue = 0.01;
 	
 	// Diffuse particle simulation parameters for falling cube
+//	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 200, 60, 13);
+//	dp->t_k_min = 5;
+//	dp->t_k_max = 60;
 	DiffuseParameters *dp = new DiffuseParameters(fp->h, 0.5, 0.5, 200, 60, 13);
-	dp->t_k_min = 5;
-	dp->t_k_max = 60;
-	ParentFluid *pf = new ParentFluid(4, 4, 4, 40, 60, 2.5, dp);
+	dp->t_k_min = 3;
+	dp->t_k_max = 40;
+	ParentFluid *pf = new ParentFluid(4, 4, 4, 10, 60, 2.5, dp);
 	pf->fp = fp;
 
 	// Simulate all frames
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 
-//		if (frame % downsample_rate == 0) {
-		if (false) {
-//		if (frame == 180) {
+		if (frame % downsample_rate == 0) {
+//		if (frame == 240) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			vector<Particle> divided_particles_4 = f->particles;
 			#pragma omp parallel for
 			for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
 				p->position = p->position / 4.0;
 			}
-			
+
 			vector<Particle> divided_diffuse_particles_4 = vector<Particle>();
 			for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
 				Particle part = Particle((*p)->position / 4.0);
@@ -132,18 +134,28 @@ int main(int argc, char** argv) {
 			// Perform marching cubes and generate .obj file
 			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
 				particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
-//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.06,
-//				particle_mass, fp->density, 0.1, step_size_multiplier, 0.01);
-			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.005,
-				particle_mass, fp->density, 0.001, step_size_multiplier, 0.01);
-			//isovalue, search_radius, box_hash_size, step_size_multiplier
-
 			m->main_March("Frame-" + to_string(frame) + ".obj");
+			
+//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.001,
+//				particle_mass, fp->density, 0.001, step_size_multiplier, 0.01);
+			//isovalue, search_radius, box_hash_size, step_size_multiplier
+			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius, particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
 			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
+			delete diffuse_m;
+			
+//			diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.0005,
+//				particle_mass, fp->density, 0.0005, step_size_multiplier, 0.001);
+//			diffuse_m->main_March("2DiffuseFrame-" + to_string(frame) + ".obj");
+//			delete diffuse_m;
+//
+//			diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.0001,
+//				particle_mass, fp->density, 0.0001, step_size_multiplier, 0.0005);
+//			diffuse_m->main_March("3DiffuseFrame-" + to_string(frame) + ".obj");
+//			delete diffuse_m;
+			
 			cout << "" << endl;
 			cout << "Generated frame #" + to_string(frame) << endl;
-			
-			delete diffuse_m;
+
 			delete m;
 		}
 		else {
@@ -152,7 +164,8 @@ int main(int argc, char** argv) {
 
 		// Simulate particle positions for next time step
 		std::cout << frame << '\n';
-		write_diffuse_pos_to_file(pf, "diffuse_" + to_string(frame) + ".txt");
+//		write_pos_to_file(f, "fluid_" + to_string(frame) + ".txt");
+//		write_diffuse_pos_to_file(pf, "diffuse_" + to_string(frame) + ".txt");
 		// Simulate 1 step
 		f->simulate(fp, accel, &collision);
 		pf->fluid = f;
