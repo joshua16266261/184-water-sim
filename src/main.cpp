@@ -92,36 +92,37 @@ int main(int argc, char** argv) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 
 		if (frame % downsample_rate == 0) {
-//		if (frame == 180) {
-			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
-			vector<Particle> divided_particles_4 = f->particles;
-			#pragma omp parallel for
-			for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
-				p->position = p->position / 4.0;
+			if (frame == 180) {
+				// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
+				vector<Particle> divided_particles_4 = f->particles;
+				#pragma omp parallel for
+				for (auto p = begin(divided_particles_4); p != end(divided_particles_4); p++) {
+					p->position = p->position / 4.0;
+				}
+
+				vector<Particle> divided_diffuse_particles_4 = vector<Particle>();
+				for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
+					Particle part = Particle((*p)->position);
+					divided_diffuse_particles_4.emplace_back(part);
+				}
+
+				cout << "Done Splitting on frame #: " + to_string(frame) << endl;
+
+				// Perform marching cubes and generate .obj file
+				marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
+					particle_mass, fp->density, isovalue, step_size_multiplier, 0.1);
+				marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius,
+					particle_mass, fp->density, isovalue, step_size_multiplier, 0.2);
+				diffuse_m->box_hash_size = 0.1;
+				//isovalue, search_radius, box_hash_size, step_size_multiplier
+
+				m->main_March("Frame-" + to_string(frame) + ".obj");
+				diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
+				cout << "" << endl;
+				cout << "Generated frame #" + to_string(frame) << endl;
+
+				delete m;
 			}
-			
-			vector<Particle> divided_diffuse_particles_4 = vector<Particle>();
-			for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
-				Particle part = Particle((*p)->position);
-				divided_diffuse_particles_4.emplace_back(part);
-			}
-
-			cout << "Done Splitting on frame #: " + to_string(frame) << endl;
-
-			// Perform marching cubes and generate .obj file
-			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
-				particle_mass, fp->density, isovalue, step_size_multiplier, 0.1);
-			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius,
-				particle_mass, fp->density, isovalue, step_size_multiplier, 0.2);
-			diffuse_m->box_hash_size = 0.1;
-			//isovalue, search_radius, box_hash_size, step_size_multiplier
-
-			m->main_March("Frame-" + to_string(frame) + ".obj");
-			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
-			cout << "" << endl;
-			cout << "Generated frame #" + to_string(frame) << endl;
-
-			delete m;
 		}
 		else {
 			cout << "Frame #: " + to_string(frame) + " skipped." << endl;
