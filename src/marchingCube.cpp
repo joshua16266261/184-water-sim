@@ -47,7 +47,8 @@ m_particle_mass = particle_mass;
 m_density = density;
 m_step_size_multiplier = step_size_multiplier;
 // This variable set the size of the box hash used to speedup
-box_hash_size = the_box_hash_size;
+//box_hash_size = .01;
+	box_hash_size = the_box_hash_size;
 
 m_hash_to_particles.clear();
 
@@ -268,8 +269,8 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
     //cout << "NEW CUBE" << endl;
     for (int i = 0; i < 8; i++) {
         cube.isovalues[i] = isovalue(cube.vertices[i], m_h);
-        //cout << i << endl;
-        //cout << cube.isovalues[i] << endl;
+//        cout << i << endl;
+//        cout << cube.isovalues[i] << endl;
 
     }
     //cout << "Finish ISO" <<"\n";
