@@ -110,9 +110,9 @@ int main(int argc, char** argv) {
 
 			// Perform marching cubes and generate .obj file
 			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
-				particle_mass, fp->density, isovalue, step_size_multiplier);
+				particle_mass, fp->density, isovalue, step_size_multiplier, 0.1);
 			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius,
-				particle_mass, fp->density, isovalue, step_size_multiplier);
+				particle_mass, fp->density, isovalue, step_size_multiplier, 0.2);
 			diffuse_m->box_hash_size = 0.1;
 			//isovalue, search_radius, box_hash_size, step_size_multiplier
 

@@ -25,8 +25,8 @@ marchingCube::marchingCube(){}
 marchingCube::marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions,
     vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
     float h, float search_radius, float particle_mass,
-    float density, float isovalue, float step_size_multiplier){
-    init(box_dimensions, particle_dimensions, particles, hash_to_particles, h,  search_radius,  particle_mass, density, isovalue, step_size_multiplier);
+    float density, float isovalue, float step_size_multiplier, float the_box_hash_size){
+    init(box_dimensions, particle_dimensions, particles, hash_to_particles, h,  search_radius,  particle_mass, density, isovalue, step_size_multiplier, the_box_hash_size);
 }
 
 
@@ -34,7 +34,7 @@ marchingCube::marchingCube(Vector3D box_dimensions, Vector3D particle_dimensions
 void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
  vector<Particle> particles, unordered_map<string, vector<Particle*>*> hash_to_particles,
  float h, float search_radius, float particle_mass, 
- float density, float isovalue, float step_size_multiplier) {
+ float density, float isovalue, float step_size_multiplier, float the_box_hash_size) {
 
 
 m_box_dimensions = box_dimensions;
