@@ -112,8 +112,6 @@ int main(int argc, char** argv) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 
 		if (frame % downsample_rate == 0) {
-//		if (frame == 240) {
-//		if (frame == 60) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			vector<Particle> divided_particles_4 = f->particles;
 			#pragma omp parallel for
@@ -131,15 +129,16 @@ int main(int argc, char** argv) {
 
 			// Perform marching cubes and generate .obj file
 			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
-				particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
+											   particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
 			m->main_March("Frame-" + to_string(frame) + ".obj");
 			
-//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.001,
-//				particle_mass, fp->density, 0.001, step_size_multiplier, 0.01);
-			//isovalue, search_radius, box_hash_size, step_size_multiplier
-//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, search_radius, particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
-//			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
-//			delete diffuse_m;
+			// isovalue, search_radius, box_hash_size, step_size_multiplier
+//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.01,
+//													   particle_mass, fp->density, isovalue, 0.15, 0.01);
+			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.01,
+													   particle_mass, fp->density, isovalue, 0.1, 0.01);
+			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
+			delete diffuse_m;
 			
 			cout << "" << endl;
 			cout << "Generated frame #" + to_string(frame) << endl;

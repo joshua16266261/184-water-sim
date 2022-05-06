@@ -82,6 +82,8 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
 	
 	isovalues.clear();
 
+	// Creating the cubes takes the longest time
+	// Everything else is fast
 	// have to expand the box to fit the particles (like -2, -2, -2 to 2, 2, 2, or wherever the walls are etc.)
 	Vector3D index = Vector3D();
 	for (int depth = 0; depth <= max_depth; depth++) {
@@ -100,7 +102,7 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
 }
 
 void marchingCube::main_March(string filename) {
-    // we have the marching cube vector now just iterate over the list and 
+    // we have the marching cube vector now just iterate over the list and
     for (auto q = begin(cube_Vector); q != end(cube_Vector); q++) {
         Polygonise(*q, m_isovalue);
     }
@@ -230,10 +232,8 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
 		}
 		
 		cube.isovalues[i] = isovalues[vertex_pos.x][vertex_pos.y][vertex_pos.z];
-//        cube.isovalues[i] = isovalue(vertex_pos, m_h);
     }
-    
-    cube_Vector.emplace_back(cube);
+	cube_Vector.emplace_back(cube);
 }
 
 
