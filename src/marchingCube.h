@@ -61,9 +61,6 @@ struct marchingCube {
 	
 	unordered_map<float, unordered_map<float, unordered_map<float, float>>> isovalues;
 
-    // The vector of cubes where we keep cubes w/ emplace
-    vector<Cube> cube_Vector;
-
     // The list of triangles we want to rasterizze
     vector<newTriangle> tri_Vector;
 
@@ -82,7 +79,7 @@ struct marchingCube {
     float isovalue(Vector3D pos, float h);
 
     // Fills an individual cube
-    void createCube(Cube cube, Vector3D index);
+    void createCube(Cube *cube, Vector3D index);
 
     // Functions for triangle generation
     int Polygonise(Cube cube, double isolevel);
@@ -90,9 +87,6 @@ struct marchingCube {
 
     // gives the hash position
     string hash_position(Vector3D pos, float h);
-
-    // Outputs the OBJ file for marching cube
-    void triToObj(string fName);
 
     int edgeTable[256] = {
 		0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,

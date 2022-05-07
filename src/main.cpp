@@ -159,12 +159,15 @@ int main(int argc, char** argv) {
 		std::cout << frame << '\n';
 		// Simulate 1 step
 		f->simulate(fp, accel, &collision);
-//		pf->fluid = f;
 		pf->simulate_step(accel, &collision);
 		
 		cout << "Simulated frame " + to_string(frame) << endl;
 		cout << " " << endl;
 	}
+	
+	remove("v.obj");
+	remove("n.obj");
+	remove("f.obj");
 	 
 	return 0;
 }

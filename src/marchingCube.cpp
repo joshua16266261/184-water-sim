@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <cstdio>
 
 #pragma GCC target ("avx2")
 #pragma GCC optimization ("O3")
@@ -76,59 +77,83 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
 	//              z = depth * box_dim.z * [(5)] / (m_part_dim.z - 1)
 	// where we want to increase the step size 5 times
 	
+	isovalues.clear();
+}
+
+void marchingCube::main_March(string filename) {
 	int max_depth = ceil(m_particle_dimensions.z / m_step_size_multiplier);
 	int max_row = ceil(m_particle_dimensions.y / m_step_size_multiplier);
 	int max_col = ceil(m_particle_dimensions.x / m_step_size_multiplier);
-	
-	isovalues.clear();
 
 	// Creating the cubes takes the longest time
 	// Everything else is fast
 	// have to expand the box to fit the particles (like -2, -2, -2 to 2, 2, 2, or wherever the walls are etc.)
 	Vector3D index;
-//	for (int depth = 0; depth <= max_depth; depth++) {
-//		index.z = depth * m_unit_dimensions.z - 0.25;
-//		for (int row = 0; row <= max_row; row++) {
-//			index.y = row * m_unit_dimensions.y - 0.25;
-//			for (int col = 0; col <= max_col; col++) {
-//				index.x = col * m_unit_dimensions.x - 0.25;
-//				// Will create a empty cube pass in top left positional index of the cube
-//				// Iterate over cube creation and then just emplace back after you fill it up
-//				Cube marchCube = Cube();
-//				createCube(marchCube, index);
-//			}
-//		}
-//	}
+	Cube c = Cube();
+	Vector3D v;
+	int idx = 1;
+	
+	ofstream vfile;
+	vfile.open("v.obj", ios_base::trunc);
+	ofstream nfile;
+	nfile.open("n.obj", ios_base::trunc);
+	ofstream ffile;
+	ffile.open("f.obj", ios_base::trunc);
+	
+	string pos, norm, face;
+	
 	for (int col = 0; col <= max_col; col++) {
 		index.x = col * m_unit_dimensions.x - 0.25;
 		// Erase isovalues 2 rows to the left
 		isovalues.erase(index.x - 2 * m_unit_dimensions.x);
+		
 		for (int row = 0; row <= max_row; row++) {
 			index.y = row * m_unit_dimensions.y - 0.25;
 			// Erase isovalues 2 cols below
 			isovalues[index.x].erase(index.y - 2 * m_unit_dimensions.y);
+			
 			for (int depth = 0; depth <= max_depth; depth++) {
 				index.z = depth * m_unit_dimensions.z - 0.25;
 				// Erase isovalues 2 layers under
 				isovalues[index.x][index.y].erase(index.z - 2 * m_unit_dimensions.z);
+				
 				// Will create a empty cube pass in top left positional index of the cube
-				createCube(Cube(), index);
+				createCube(&c, index);
+				Polygonise(c, m_isovalue);
 			}
+			
+			// Write vertices, normals, and faces to separate files
+			for (auto& tri : tri_Vector) {
+				for (int i = 0; i < 3; i++) {
+					v = tri.coordinates[i];
+					pos = "v " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
+					vfile << pos << "\n";
+					
+					v = tri.normal[i];
+					norm = "vn " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
+					nfile << norm << "\n";
+				}
+				
+				face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
+				ffile << face << "\n";
+				idx += 3;
+			}
+			
+			tri_Vector.clear();
 		}
 	}
+	
+	vfile.close();
+	nfile.close();
+	ffile.close();
+	
+	ofstream out_file(filename);
+	ifstream v_file("v.obj");
+	ifstream n_file("n.obj");
+	ifstream f_file("f.obj");
+
+	out_file << v_file.rdbuf() << n_file.rdbuf() << f_file.rdbuf();
 }
-
-void marchingCube::main_March(string filename) {
-    // we have the marching cube vector now just iterate over the list and
-    for (auto q = begin(cube_Vector); q != end(cube_Vector); q++) {
-        Polygonise(*q, m_isovalue);
-    }
-    // will call the file.obj function in the main function btw and not here
-    triToObj(filename);
-	cout << "Written OBJ File" << endl;
-}
-
-
 
 // r is the vector from particle to position p
 float marchingCube::isotropic_kernel(Vector3D r, float h) {
@@ -149,10 +174,6 @@ float marchingCube::isovalue(Vector3D pos, float h) {
     // Check for particles that are in specific radius
     
 	// Need to check surrounding cube for edge case
-//	vector<Vector3D> cube_off = { Vector3D(0, 0, 0), Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0, 1, 0),
-//									Vector3D(0, 1, 1), Vector3D(0, 1, -1), Vector3D(0, -1, 0), Vector3D(0, -1, 1), Vector3D(0, -1, -1),
-//								  Vector3D(1, 0, 0), Vector3D(1, 0, 1), Vector3D(1, 0, -1), Vector3D(1, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 1, -1), Vector3D(1, -1, 0), Vector3D(1, -1, 1), Vector3D(1, -1, -1),
-//								  Vector3D(-1, 0, 0), Vector3D(-1, 0, 1), Vector3D(-1, 0, -1), Vector3D(-1, 1, 0), Vector3D(-1, 1, 1), Vector3D(-1, 1, -1), Vector3D(-1, -1, 0), Vector3D(-1, -1, 1), Vector3D(-1, -1, -1)};
 	Vector3D update_pos;
 	for (int i = -1; i <= 1; i++) {
 		update_pos.x = pos.x + box_hash_size * i;
@@ -160,6 +181,7 @@ float marchingCube::isovalue(Vector3D pos, float h) {
 			update_pos.y = pos.y + box_hash_size * j;
 			for (int k = -1; k <= 1; k++) {
 				update_pos.z = pos.z + box_hash_size * k;
+				
 				// Compute the Vortex of with the offset applied
 				string vortex_key = hash_position(update_pos, box_hash_size);
 				auto c = m_hash_to_particles[vortex_key];
@@ -174,21 +196,6 @@ float marchingCube::isovalue(Vector3D pos, float h) {
 			}
 		}
 	}
-//	for (auto off : cube_off) {
-//		// Compute the Vortex of with the offset applied
-//		Vector3D update_pos = Vector3D(pos.x + box_hash_size * off.x, pos.y + box_hash_size * off.y, pos.z + box_hash_size * off.z);
-//		string vortex_key = hash_position(update_pos, box_hash_size);
-//		auto c = m_hash_to_particles[vortex_key];
-//		if (c == NULL) {
-//			continue;
-//		}
-//		for (auto q = begin(*c); q != end(*c); q++) {
-//			// Check if particle is inside the radius
-//			if ((pos - (*q)->position).norm() <= m_search_radius) {
-//				rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
-//			}
-//		}
-//	}
 
     return rho;
 }
@@ -213,7 +220,7 @@ string marchingCube::hash_position(Vector3D pos, float h) {
 
 // Create the Marching Cube Grid (each sub-cube within the whole space)
 // Inputs: the index of the cube in all directions (i.e. 1 in X, 4 in Y, and 2 in Z)
-void marchingCube::createCube(Cube cube, Vector3D index) {
+void marchingCube::createCube(Cube *cube, Vector3D index) {
     // Cube placement in verticies is based on http://paulbourke.net/geometry/polygonise/polygonise1.gif
     // Configuration:
     // bottom-backward-left = 0, bottom-back-right = 1, bottom-front-right = 2,
@@ -230,29 +237,29 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
     // Can do this visually, checking the picture aswell to do re-verify this works
     // NOTE TO SELF FOR SANITY: IF YOU USE A CLASS VAR NAME DO NOT RE-INITIALIZE IT OR ELSE IT WILL GIVE YOU 0  AAAAAAAAAAAAAAA
     // FIXED ACCORING TO https://i.stack.imgur.com/oLUUQ.png
-    cube.vertices[0] = Vector3D(index.x, index.y, index.z - unit_Z);
-    cube.vertices[1] = Vector3D(index.x + unit_X, index.y, index.z - unit_Z);
-    cube.vertices[2] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z - unit_Z);
-    cube.vertices[3] = Vector3D(index.x, index.y + unit_Y, index.z - unit_Z);
-    cube.vertices[4] = index;
-    cube.vertices[5] = Vector3D(index.x + unit_X, index.y, index.z);
-    cube.vertices[6] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z);
-    cube.vertices[7] = Vector3D(index.x, index.y + unit_Y, index.z);
+    cube->vertices[0] = Vector3D(index.x, index.y, index.z - unit_Z);
+	cube->vertices[1] = Vector3D(index.x + unit_X, index.y, index.z - unit_Z);
+    cube->vertices[2] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z - unit_Z);
+    cube->vertices[3] = Vector3D(index.x, index.y + unit_Y, index.z - unit_Z);
+    cube->vertices[4] = index;
+    cube->vertices[5] = Vector3D(index.x + unit_X, index.y, index.z);
+    cube->vertices[6] = Vector3D(index.x + unit_X, index.y + unit_Y, index.z);
+    cube->vertices[7] = Vector3D(index.x, index.y + unit_Y, index.z);
 
     // Normals
-    cube.normals[0] = cube.vertices[0] - (cube.vertices[0] - cube.vertices[6]).unit();
-    cube.normals[1] = cube.vertices[1] - (cube.vertices[1] - cube.vertices[7]).unit();
-    cube.normals[2] = cube.vertices[2] - (cube.vertices[2] - cube.vertices[4]).unit();
-    cube.normals[3] = cube.vertices[3] - (cube.vertices[3] - cube.vertices[5]).unit();
-    cube.normals[4] = cube.vertices[4] + (cube.vertices[4] - cube.vertices[2]).unit();
-    cube.normals[5] = cube.vertices[5] + (cube.vertices[5] - cube.vertices[3]).unit();
-    cube.normals[6] = cube.vertices[6] + (cube.vertices[6] - cube.vertices[0]).unit();
-    cube.normals[7] = cube.vertices[7] + (cube.vertices[7] - cube.vertices[1]).unit();
+	cube->normals[0] = cube->vertices[0] - (cube->vertices[0] - cube->vertices[6]).unit();
+	cube->normals[1] = cube->vertices[1] - (cube->vertices[1] - cube->vertices[7]).unit();
+	cube->normals[2] = cube->vertices[2] - (cube->vertices[2] - cube->vertices[4]).unit();
+	cube->normals[3] = cube->vertices[3] - (cube->vertices[3] - cube->vertices[5]).unit();
+	cube->normals[4] = cube->vertices[4] + (cube->vertices[4] - cube->vertices[2]).unit();
+	cube->normals[5] = cube->vertices[5] + (cube->vertices[5] - cube->vertices[3]).unit();
+	cube->normals[6] = cube->vertices[6] + (cube->vertices[6] - cube->vertices[0]).unit();
+	cube->normals[7] = cube->vertices[7] + (cube->vertices[7] - cube->vertices[1]).unit();
 	
     // Assign the isovalue for each cube vertex
 	Vector3D vertex_pos;
     for (int i = 0; i < 8; i++) {
-		vertex_pos = cube.vertices[i];
+		vertex_pos = cube->vertices[i];
 		if (isovalues.count(vertex_pos.x) > 0) {
 			if (isovalues[vertex_pos.x].count(vertex_pos.y) > 0) {
 				if (isovalues[vertex_pos.x][vertex_pos.y].count(vertex_pos.z) == 0) {
@@ -268,9 +275,8 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
 			isovalues[vertex_pos.x][vertex_pos.y][vertex_pos.z] = isovalue(vertex_pos, m_h);
 		}
 		
-		cube.isovalues[i] = isovalues[vertex_pos.x][vertex_pos.y][vertex_pos.z];
+		cube->isovalues[i] = isovalues[vertex_pos.x][vertex_pos.y][vertex_pos.z];
     }
-	cube_Vector.emplace_back(cube);
 }
 
 
@@ -284,7 +290,7 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
 */
 // http://paulbourke.net/geometry/polygonise/ is origin of code
 int marchingCube::Polygonise(Cube cube, double isolevel) {
-    int i, ntriang;
+	int i, ntriang;
     int cubeindex;
     Vector3D vertlist[12];
     Vector3D normlist[12];
@@ -442,39 +448,4 @@ Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double v
 
     // We may also need to have it so we return p's norm, so maybe return something else instead of a 3D triangle
     return n;
-}
-
-void marchingCube::triToObj(string fName) {
-    ofstream ofile;
-    ofile.open(fName);
-    if (ofile.is_open()) {
-        cout << "Open Success" << "\n";
-    }
-	Vector3D v;
-    for (auto& tri : tri_Vector) {
-        // Add Vertices to the OBJ file
-        for (int i = 0; i < 3; i++) {
-            v = tri.coordinates[i];
-            string pos = "v " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
-            ofile << pos << "\n";
-        }
-    }
-
-    for (auto& tri : tri_Vector) {
-        // Add Normals to the OBJ file
-        for (int i = 0; i < 3; i++) {
-            v = tri.normal[i];
-            string norm = "vn " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
-            ofile << norm << "\n";
-        }
-    }
-
-    // Add the faces
-    int idx = 1;
-    for (auto& tri : tri_Vector) {
-        string face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
-        ofile << face << "\n";
-        idx += 3;
-    }
-    ofile.close();
 }
