@@ -85,17 +85,34 @@ void marchingCube::init(Vector3D box_dimensions, Vector3D particle_dimensions,
 	// Creating the cubes takes the longest time
 	// Everything else is fast
 	// have to expand the box to fit the particles (like -2, -2, -2 to 2, 2, 2, or wherever the walls are etc.)
-	Vector3D index = Vector3D();
-	for (int depth = 0; depth <= max_depth; depth++) {
-		index.z = depth * m_unit_dimensions.z - 0.25;
+	Vector3D index;
+//	for (int depth = 0; depth <= max_depth; depth++) {
+//		index.z = depth * m_unit_dimensions.z - 0.25;
+//		for (int row = 0; row <= max_row; row++) {
+//			index.y = row * m_unit_dimensions.y - 0.25;
+//			for (int col = 0; col <= max_col; col++) {
+//				index.x = col * m_unit_dimensions.x - 0.25;
+//				// Will create a empty cube pass in top left positional index of the cube
+//				// Iterate over cube creation and then just emplace back after you fill it up
+//				Cube marchCube = Cube();
+//				createCube(marchCube, index);
+//			}
+//		}
+//	}
+	for (int col = 0; col <= max_col; col++) {
+		index.x = col * m_unit_dimensions.x - 0.25;
+		// Erase isovalues 2 rows to the left
+		isovalues.erase(index.x - 2 * m_unit_dimensions.x);
 		for (int row = 0; row <= max_row; row++) {
 			index.y = row * m_unit_dimensions.y - 0.25;
-			for (int col = 0; col <= max_col; col++) {
-				index.x = col * m_unit_dimensions.x - 0.25;
+			// Erase isovalues 2 cols below
+			isovalues[index.x].erase(index.y - 2 * m_unit_dimensions.y);
+			for (int depth = 0; depth <= max_depth; depth++) {
+				index.z = depth * m_unit_dimensions.z - 0.25;
+				// Erase isovalues 2 layers under
+				isovalues[index.x][index.y].erase(index.z - 2 * m_unit_dimensions.z);
 				// Will create a empty cube pass in top left positional index of the cube
-				// Iterate over cube creation and then just emplace back after you fill it up
-				Cube marchCube = Cube();
-				createCube(marchCube, index);
+				createCube(Cube(), index);
 			}
 		}
 	}
@@ -108,7 +125,7 @@ void marchingCube::main_March(string filename) {
     }
     // will call the file.obj function in the main function btw and not here
     triToObj(filename);
-    cout << "Written OBJ File";
+	cout << "Written OBJ File" << endl;
 }
 
 
@@ -132,25 +149,46 @@ float marchingCube::isovalue(Vector3D pos, float h) {
     // Check for particles that are in specific radius
     
 	// Need to check surrounding cube for edge case
-	vector<Vector3D> cube_off = { Vector3D(0, 0, 0), Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0, 1, 0),
-									Vector3D(0, 1, 1), Vector3D(0, 1, -1), Vector3D(0, -1, 0), Vector3D(0, -1, 1), Vector3D(0, -1, -1),
-								  Vector3D(1, 0, 0), Vector3D(1, 0, 1), Vector3D(1, 0, -1), Vector3D(1, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 1, -1), Vector3D(1, -1, 0), Vector3D(1, -1, 1), Vector3D(1, -1, -1),
-								  Vector3D(-1, 0, 0), Vector3D(-1, 0, 1), Vector3D(-1, 0, -1), Vector3D(-1, 1, 0), Vector3D(-1, 1, 1), Vector3D(-1, 1, -1), Vector3D(-1, -1, 0), Vector3D(-1, -1, 1), Vector3D(-1, -1, -1)};
-	for (auto off : cube_off) {
-		// Compute the Vortex of with the offset applied
-		Vector3D update_pos = Vector3D(pos.x + box_hash_size * off.x, pos.y + box_hash_size * off.y, pos.z + box_hash_size * off.z);
-		string vortex_key = hash_position(update_pos, box_hash_size);
-		auto c = m_hash_to_particles[vortex_key];
-		if (c == NULL) {
-			continue;
-		}
-		for (auto q = begin(*c); q != end(*c); q++) {
-			// Check if particle is inside the radius
-			if ((pos - (*q)->position).norm() <= m_search_radius) {
-				rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+//	vector<Vector3D> cube_off = { Vector3D(0, 0, 0), Vector3D(0, 0, 1), Vector3D(0, 0, -1), Vector3D(0, 1, 0),
+//									Vector3D(0, 1, 1), Vector3D(0, 1, -1), Vector3D(0, -1, 0), Vector3D(0, -1, 1), Vector3D(0, -1, -1),
+//								  Vector3D(1, 0, 0), Vector3D(1, 0, 1), Vector3D(1, 0, -1), Vector3D(1, 1, 0), Vector3D(1, 1, 1), Vector3D(1, 1, -1), Vector3D(1, -1, 0), Vector3D(1, -1, 1), Vector3D(1, -1, -1),
+//								  Vector3D(-1, 0, 0), Vector3D(-1, 0, 1), Vector3D(-1, 0, -1), Vector3D(-1, 1, 0), Vector3D(-1, 1, 1), Vector3D(-1, 1, -1), Vector3D(-1, -1, 0), Vector3D(-1, -1, 1), Vector3D(-1, -1, -1)};
+	Vector3D update_pos;
+	for (int i = -1; i <= 1; i++) {
+		update_pos.x = pos.x + box_hash_size * i;
+		for (int j = -1; j <= 1; j++) {
+			update_pos.y = pos.y + box_hash_size * j;
+			for (int k = -1; k <= 1; k++) {
+				update_pos.z = pos.z + box_hash_size * k;
+				// Compute the Vortex of with the offset applied
+				string vortex_key = hash_position(update_pos, box_hash_size);
+				auto c = m_hash_to_particles[vortex_key];
+				if (c) {
+					for (auto q = begin(*c); q != end(*c); q++) {
+						// Check if particle is inside the radius
+						if ((pos - (*q)->position).norm() <= m_search_radius) {
+							rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+						}
+					}
+				}
 			}
 		}
 	}
+//	for (auto off : cube_off) {
+//		// Compute the Vortex of with the offset applied
+//		Vector3D update_pos = Vector3D(pos.x + box_hash_size * off.x, pos.y + box_hash_size * off.y, pos.z + box_hash_size * off.z);
+//		string vortex_key = hash_position(update_pos, box_hash_size);
+//		auto c = m_hash_to_particles[vortex_key];
+//		if (c == NULL) {
+//			continue;
+//		}
+//		for (auto q = begin(*c); q != end(*c); q++) {
+//			// Check if particle is inside the radius
+//			if ((pos - (*q)->position).norm() <= m_search_radius) {
+//				rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+//			}
+//		}
+//	}
 
     return rho;
 }
@@ -188,7 +226,7 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
     float unit_Y = m_unit_dimensions.y;
     float unit_Z = m_unit_dimensions.z;
 
-    // The way I did this was that to go from one verticie to another of the cube you just add 1 unit length
+    // The way I did this was that to go from one vertex to another of the cube you just add 1 unit length
     // Can do this visually, checking the picture aswell to do re-verify this works
     // NOTE TO SELF FOR SANITY: IF YOU USE A CLASS VAR NAME DO NOT RE-INITIALIZE IT OR ELSE IT WILL GIVE YOU 0  AAAAAAAAAAAAAAA
     // FIXED ACCORING TO https://i.stack.imgur.com/oLUUQ.png
@@ -210,12 +248,11 @@ void marchingCube::createCube(Cube cube, Vector3D index) {
     cube.normals[5] = cube.vertices[5] + (cube.vertices[5] - cube.vertices[3]).unit();
     cube.normals[6] = cube.vertices[6] + (cube.vertices[6] - cube.vertices[0]).unit();
     cube.normals[7] = cube.vertices[7] + (cube.vertices[7] - cube.vertices[1]).unit();
-    
+	
     // Assign the isovalue for each cube vertex
 	Vector3D vertex_pos;
     for (int i = 0; i < 8; i++) {
 		vertex_pos = cube.vertices[i];
-		
 		if (isovalues.count(vertex_pos.x) > 0) {
 			if (isovalues[vertex_pos.x].count(vertex_pos.y) > 0) {
 				if (isovalues[vertex_pos.x][vertex_pos.y].count(vertex_pos.z) == 0) {
@@ -375,11 +412,11 @@ Vector3D VertexInterp(double isolevel, Vector3D p1, Vector3D p2, double valp1, d
     double mu;
     Vector3D p;
     if (abs(isolevel - valp1) < 0.00001)
-        return(p1);
+        return p1;
     if (abs(isolevel - valp2) < 0.00001)
-        return(p2);
+        return p2;
     if (abs(valp1 - valp2) < 0.00001)
-        return(p1);
+        return p1;
     mu = (isolevel - valp1) / (valp2 - valp1);
     p.x = p1.x + mu * (p2.x - p1.x);
     p.y = p1.y + mu * (p2.y - p1.y);
@@ -393,11 +430,11 @@ Vector3D VertexInterpNormals(double isolevel, Vector3D n1, Vector3D n2, double v
     double mu;
     Vector3D n;
     if (abs(isolevel - valp1) < 0.00001)
-        return(n1);
+        return n1;
     if (abs(isolevel - valp2) < 0.00001)
-        return(n2);
+        return n2;
     if (abs(valp1 - valp2) < 0.00001)
-        return(n1);
+        return n1;
     mu = (isolevel - valp1) / (valp2 - valp1);
     n.x = n1.x + mu * (n2.x - n1.x);
     n.y = n1.y + mu * (n2.y - n1.y);
@@ -413,11 +450,12 @@ void marchingCube::triToObj(string fName) {
     if (ofile.is_open()) {
         cout << "Open Success" << "\n";
     }
+	Vector3D v;
     for (auto& tri : tri_Vector) {
         // Add Vertices to the OBJ file
         for (int i = 0; i < 3; i++) {
-            Vector3D vert = tri.coordinates[i];
-            string pos = "v " + to_string(vert.x) + " " + to_string(vert.y) + " " + to_string(vert.z);
+            v = tri.coordinates[i];
+            string pos = "v " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
             ofile << pos << "\n";
         }
     }
@@ -425,8 +463,8 @@ void marchingCube::triToObj(string fName) {
     for (auto& tri : tri_Vector) {
         // Add Normals to the OBJ file
         for (int i = 0; i < 3; i++) {
-            Vector3D normal = tri.normal[i];
-            string norm = "vn " + to_string(normal.x) + " " + to_string(normal.y) + " " + to_string(normal.z);
+            v = tri.normal[i];
+            string norm = "vn " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
             ofile << norm << "\n";
         }
     }
