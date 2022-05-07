@@ -92,6 +92,7 @@ void marchingCube::main_March(string filename) {
 	Cube c = Cube();
 	Vector3D v;
 	int idx = 1;
+	int so_far = 0;
 	
 	ofstream vfile;
 	vfile.open("v.obj", ios_base::trunc);
@@ -119,27 +120,33 @@ void marchingCube::main_March(string filename) {
 				
 				// Will create a empty cube pass in top left positional index of the cube
 				createCube(&c, index);
-				Polygonise(c, m_isovalue);
-			}
-			
-			// Write vertices, normals, and faces to separate files
-			for (auto& tri : tri_Vector) {
-				for (int i = 0; i < 3; i++) {
-					v = tri.coordinates[i];
-					pos = "v " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
-					vfile << pos << "\n";
-					
-					v = tri.normal[i];
-					norm = "vn " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
-					nfile << norm << "\n";
-				}
 				
-				face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
-				ffile << face << "\n";
-				idx += 3;
+				Polygonise(c, m_isovalue);
+				
+				if (so_far == 100000) {
+					// Write vertices, normals, and faces to separate files
+					for (auto& tri : tri_Vector) {
+						for (int i = 0; i < 3; i++) {
+							v = tri.coordinates[i];
+							pos = "v " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
+							vfile << pos << "\n";
+							
+							v = tri.normal[i];
+							norm = "vn " + to_string(v.x) + " " + to_string(v.y) + " " + to_string(v.z);
+							nfile << norm << "\n";
+						}
+						
+						face = "f " + to_string(idx) + "//" + to_string(idx) + " " + to_string(idx + 1) + "//" + to_string(idx + 1) + " " + to_string(idx + 2) + "//" + to_string(idx + 2);
+						ffile << face << "\n";
+						idx += 3;
+					}
+					
+					tri_Vector.clear();
+					so_far = 0;
+				} else {
+					so_far++;
+				}
 			}
-			
-			tri_Vector.clear();
 		}
 	}
 	
@@ -175,6 +182,9 @@ float marchingCube::isovalue(Vector3D pos, float h) {
     
 	// Need to check surrounding cube for edge case
 	Vector3D update_pos;
+	float rhos[] = {0, 0, 0};
+	
+	#pragma omp parallel for
 	for (int i = -1; i <= 1; i++) {
 		update_pos.x = pos.x + box_hash_size * i;
 		for (int j = -1; j <= 1; j++) {
@@ -189,14 +199,14 @@ float marchingCube::isovalue(Vector3D pos, float h) {
 					for (auto q = begin(*c); q != end(*c); q++) {
 						// Check if particle is inside the radius
 						if ((pos - (*q)->position).norm() <= m_search_radius) {
-							rho += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
+							rhos[i + 1] += m_particle_mass * isotropic_kernel(pos - (*q)->position, h);
 						}
 					}
 				}
 			}
 		}
 	}
-
+	rho = rhos[0] + rhos[1] + rhos[2];
     return rho;
 }
 
