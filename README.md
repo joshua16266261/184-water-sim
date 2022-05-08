@@ -1,2 +1,2 @@
-# Assignment 4: Cloth Simulation
-You can view the spec for this project at [Assignment 4: Cloth Simulation](https://cs184.eecs.berkeley.edu/sp22/docs/proj4).
+# Final Project: Realistic Water Simulation with Spray, Foam, and Bubbles
+First build OpenVDB by following the directions [here](https://github.com/AcademySoftwareFoundation/openvdb).
