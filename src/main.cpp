@@ -7,6 +7,9 @@
 
 #include <fstream>
 
+#include <openvdb/openvdb.h>
+#include <openvdb/tools/ParticlesToLevelSet.h>
+
 using namespace std;
 
 
@@ -113,10 +116,13 @@ int main(int argc, char** argv) {
 
 	// Simulate all frames
 	vector<Particle> divided_particles_4;
-	vector<Particle> divided_diffuse_particles_4 = vector<Particle>();
+	
+	openvdb::initialize();
+	
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 		if (frame % downsample_rate == 0) {
+//		if (frame == 180) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			divided_particles_4 = f->particles;
 			#pragma omp parallel for
@@ -131,23 +137,28 @@ int main(int argc, char** argv) {
 											   particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
 			m->main_March("Frame-" + to_string(frame) + ".obj");
 			delete m;
-			divided_particles_4.clear();
 			
+			openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
 			
-			for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
-				divided_diffuse_particles_4.emplace_back(Particle((*p)->position / 4));
-			}
-			// isovalue, search_radius, box_hash_size, step_size_multiplier
-			cout << "Marching on diffuse" << endl;
-//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.01,
-//													   particle_mass, fp->density, isovalue, 0.15, 0.01);
-			marchingCube* diffuse_m = new marchingCube(Vector3D(2.5, 2.5, 1.5), partDim, divided_diffuse_particles_4, f->map,
-													   fp->h, 0.01, particle_mass, fp->density, isovalue, 0.1, 0.01);
-//			marchingCube* diffuse_m = new marchingCube(bDim, partDim, divided_diffuse_particles_4, f->map, fp->h, 0.005,
-//													   particle_mass, fp->density, isovalue, 0.05, 0.005);
-			diffuse_m->main_March("DiffuseFrame-" + to_string(frame) + ".obj");
-			delete diffuse_m;
-			divided_diffuse_particles_4.clear();
+			// Associate a scaling transform with the grid that sets the voxel size
+			// to 0.5 units in world space.
+			grid->setTransform(openvdb::math::Transform::createLinearTransform(/*voxel size=*/0.5));
+			
+			// Identify the grid as a level set.
+			grid->setGridClass(openvdb::GRID_LEVEL_SET);
+			
+			openvdb::tools::ParticlesToLevelSet<openvdb::FloatGrid> raster(*grid);
+			raster.rasterizeSpheres(*pf);
+			raster.finalize();
+			
+			// Create a VDB file object.
+			openvdb::io::File file("Diffuse-" + to_string(frame) + ".vdb");
+			// Add the grid pointer to a container.
+			openvdb::GridPtrVec grids;
+			grids.push_back(grid);
+			// Write out the contents of the container.
+			file.write(grids);
+			file.close();
 			
 			cout << "" << endl;
 			cout << "Generated frame #" + to_string(frame) << endl;
