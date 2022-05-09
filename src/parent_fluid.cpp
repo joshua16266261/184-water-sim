@@ -22,8 +22,6 @@ ParentFluid::ParentFluid(double length, double width, double height, int particl
     this->particle_density = particle_density;
     this->fps = fps;
     this->total_time = total_time;
-    this->fluid = new Fluid(particle_density * length / 10, particle_density * width / 10, particle_density * height / 10, particle_density * length, particle_density * width, particle_density * height);
-    this->fp = new FluidParameters(6000, total_time, 60, 5);
     this->diffuse_particles = new vector<DiffuseParticle*>();
     this->dp = dp;
     this->vol_radius = 1.0 / particle_density;
@@ -285,4 +283,3 @@ void ParentFluid::generate(Particle *p, int n) {
         diffuse_particles->emplace_back(d);
     }
 }
-

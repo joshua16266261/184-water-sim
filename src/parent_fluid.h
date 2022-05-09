@@ -52,17 +52,16 @@ struct DiffuseParameters {
 
 };
 
-
 struct ParentFluid {
   ParentFluid() {}
   ParentFluid(double length, double width, double height, int particle_density, int fps, double total_time, DiffuseParameters *dp);
   ~ParentFluid();
-
-//Sim parameters
+	
+	// Sim parameters
     int fps;
     double total_time;
 
-//Fluid Parameters
+	// Fluid Parameters
     double length;
     double width;
     double height;
@@ -111,11 +110,6 @@ struct ParentFluid {
 	double clamp2(double I, double tao_min, double tao_max) {
 		return (min(I, tao_max) - min(I, tao_min)) / (tao_max - tao_min);
 	}
-
 };
-
-
-
-
 
 #endif /* PARENT_FLUID_H */

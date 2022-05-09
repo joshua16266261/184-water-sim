@@ -223,3 +223,4 @@ endif()
 
 # Install settings
 set(CMAKE_INSTALL_PREFIX "${ClothSim_SOURCE_DIR}/")
+
