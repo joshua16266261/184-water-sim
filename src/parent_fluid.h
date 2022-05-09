@@ -13,8 +13,6 @@
 #include "fluid.h"
 #include "diffuse.h"
 
-#include <openvdb/openvdb.h>
-
 using namespace CGL;
 using namespace std;
 

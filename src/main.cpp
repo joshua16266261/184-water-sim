@@ -136,8 +136,6 @@ int main(int argc, char** argv) {
 	// Simulate all frames
 	vector<Particle> divided_particles_4;
 	
-	openvdb::initialize();
-	
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
 		
