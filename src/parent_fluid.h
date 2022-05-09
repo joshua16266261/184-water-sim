@@ -17,7 +17,6 @@
 
 using namespace CGL;
 using namespace std;
-using namespace openvdb;
 
 
 struct DiffuseParameters {
@@ -59,8 +58,6 @@ struct ParentFluid {
   ParentFluid() {}
   ParentFluid(double length, double width, double height, int particle_density, int fps, double total_time, DiffuseParameters *dp);
   ~ParentFluid();
-	
-	using PosType = Vec3R;
 	
 	// Sim parameters
     int fps;
@@ -115,23 +112,6 @@ struct ParentFluid {
 	double clamp2(double I, double tao_min, double tao_max) {
 		return (min(I, tao_max) - min(I, tao_min)) / (tao_max - tao_min);
 	}
-	
-	// Return the total number of particles in the list.
-	// Always required!
-	size_t size() const;
-	
-	// Get the world-space position of the nth particle.
-	// Required by rasterizeSpheres().
-	void getPos(size_t n, Vec3R& xyz) const;
-	
-	// Get the world-space position and radius of the nth particle.
-	// Required by rasterizeSpheres().
-	void getPosRad(size_t n, Vec3R& xyz, Real& radius) const;
-	
-	// Get the world-space position, radius and velocity of the nth particle.
-	// Required by rasterizeTrails().
-	void getPosRadVel(size_t n, Vec3R& xyz, Real& radius, Vec3R& velocity) const;
-
 };
 
 #endif /* PARENT_FLUID_H */

@@ -7,11 +7,7 @@
 
 #include <fstream>
 
-#include <openvdb/openvdb.h>
-#include <openvdb/tools/ParticlesToLevelSet.h>
-
 using namespace std;
-
 
 void write_pos_to_file(Fluid* f, string filename) {
 	// FOR TESTING ONLY
@@ -44,6 +40,24 @@ void write_diffuse_pos_to_file(ParentFluid *pf, string filename) {
 	write_diffuse_pos_to_file_helper(pf, "spray_" + filename, SPRAY);
 }
 
+void write_ply(vector<Particle> particles, string filename) {
+	ofstream file(filename);
+	file << "ply" << endl;
+	file << "format ascii 1.0" << endl;
+	file << "element vertex " << to_string(particles.size()) << endl;
+	file << "property float x" << endl;
+	file << "property float y" << endl;
+	file << "property float z" << endl;
+	file << "end_header" << endl;
+	
+	for (auto p = begin(particles); p != end(particles); p++) {
+		Vector3D pos = p->position;
+		file << pos.x << " " << pos.y << " " << pos.z << endl;
+	}
+	
+	file.close();
+}
+
 
 int main(int argc, char** argv) {
 	// Default: 4x4x4 cube with 40x40x40 particles
@@ -70,19 +84,24 @@ int main(int argc, char** argv) {
 	// Command line args for video time and output fps
 	const string time = "--time";
 	const string fps = "--fps";
+	const string no_march = "--no-march";
 	// Alternatively, set total_time and output_fps
-	double total_time = 5;
-	int output_fps = 10;
+	double total_time = 10;
+	int output_fps = 30;
+	bool march = true;
 	for (int i = 1; i < argc - 1; i++) {
 		if (argv[i] == time) {
 			total_time = stod(argv[i + 1]);
 		} else if (argv[i] == fps) {
 			output_fps = stoi(argv[i + 1]);
+		} else if (argv[i] == no_march) {
+			march = false;
 		}
 	}
 	
 	cout << "Total time: " + to_string(total_time) << endl;
 	cout << "Output fps: " + to_string(output_fps) << endl;
+	cout << "Marching: " + to_string(march) << endl;
 	
 	int downsample_rate = 60 / output_fps;
 	
@@ -121,8 +140,8 @@ int main(int argc, char** argv) {
 	
 	for (int frame = 0; frame < fp->total_time * fp->fps; frame++) {
 		cout << "Starting on frame #: " + to_string(frame) << endl;
+		
 		if (frame % downsample_rate == 0) {
-//		if (frame == 180) {
 			// Create a deep copy of all the particles and divide positions to keep everything within (0, 0, 0) and (2, 2, 2)
 			divided_particles_4 = f->particles;
 			#pragma omp parallel for
@@ -131,34 +150,23 @@ int main(int argc, char** argv) {
 			}
 			cout << "Done Splitting on frame #: " + to_string(frame) << endl;
 
-			cout << "Marching on fluid" << endl;
-			// Perform marching cubes and generate .obj file
-			marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
-											   particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
-			m->main_March("Frame-" + to_string(frame) + ".obj");
-			delete m;
+			if (march) {
+				cout << "Marching on fluid" << endl;
+				// Perform marching cubes and generate .obj file
+				marchingCube* m = new marchingCube(bDim, partDim, divided_particles_4, f->map, fp->h, search_radius,
+												   particle_mass, fp->density, isovalue, step_size_multiplier, 0.01);
+				m->main_March("Frame-" + to_string(frame) + ".obj");
+				delete m;
+			}
 			
-			openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
+			write_ply(divided_particles_4, "Fluid-" + to_string(frame) + ".ply");
 			
-			// Associate a scaling transform with the grid that sets the voxel size
-			// to 0.5 units in world space.
-			grid->setTransform(openvdb::math::Transform::createLinearTransform(/*voxel size=*/0.5));
+			divided_particles_4.clear();
+			for (auto p = begin(*pf->diffuse_particles); p != end(*pf->diffuse_particles); p++) {
+				divided_particles_4.emplace_back(Particle((*p)->position / 4));
+			}
 			
-			// Identify the grid as a level set.
-			grid->setGridClass(openvdb::GRID_LEVEL_SET);
-			
-			openvdb::tools::ParticlesToLevelSet<openvdb::FloatGrid> raster(*grid);
-			raster.rasterizeSpheres(*pf);
-			raster.finalize();
-			
-			// Create a VDB file object.
-			openvdb::io::File file("Diffuse-" + to_string(frame) + ".vdb");
-			// Add the grid pointer to a container.
-			openvdb::GridPtrVec grids;
-			grids.push_back(grid);
-			// Write out the contents of the container.
-			file.write(grids);
-			file.close();
+			write_ply(divided_particles_4, "Diffuse-" + to_string(frame) + ".ply");
 			
 			cout << "" << endl;
 			cout << "Generated frame #" + to_string(frame) << endl;
@@ -167,7 +175,6 @@ int main(int argc, char** argv) {
 		}
 
 		// Simulate particle positions for next time step
-		std::cout << frame << '\n';
 		// Simulate 1 step
 		f->simulate(fp, accel, &collision);
 		pf->simulate_step(accel, &collision);
@@ -176,9 +183,11 @@ int main(int argc, char** argv) {
 		cout << " " << endl;
 	}
 	
-	remove("v.obj");
-	remove("n.obj");
-	remove("f.obj");
-	 
+	if (march) {
+		remove("v.obj");
+		remove("n.obj");
+		remove("f.obj");
+	}
+	
 	return 0;
 }

@@ -224,7 +224,3 @@ endif()
 # Install settings
 set(CMAKE_INSTALL_PREFIX "${ClothSim_SOURCE_DIR}/")
 
-cmake_minimum_required(VERSION 3.15)
-list(APPEND CMAKE_MODULE_PATH "/usr/local/lib/cmake/OpenVDB")
-find_package(OpenVDB REQUIRED)
-target_link_libraries(clothsim OpenVDB::openvdb)

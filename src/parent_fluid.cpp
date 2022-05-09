@@ -283,38 +283,3 @@ void ParentFluid::generate(Particle *p, int n) {
         diffuse_particles->emplace_back(d);
     }
 }
-
-// Return the total number of particles in the list.
-// Always required!
-size_t ParentFluid::size() const {
-	return diffuse_particles->size();
-}
-
-// Get the world-space position of the nth particle.
-// Required by rasterizeSpheres().
-void ParentFluid::getPos(size_t n, Vec3R& xyz) const {
-	// Assume that all positions will be divided by 4 for the final render
-	Vector3D pos = diffuse_particles->at(n)->position / 4;
-	xyz.x() = pos.x;
-	xyz.y() = pos.y;
-	xyz.z() = pos.z;
-}
-
-// Get the world-space position and radius of the nth particle.
-// Required by rasterizeSpheres().
-void ParentFluid::getPosRad(size_t n, Vec3R& xyz, Real& radius) const {
-	getPos(n, xyz);
-	//TODO: Possibly change radius
-	radius = vol_radius;
-}
-
-// Get the world-space position, radius and velocity of the nth particle.
-// Required by rasterizeTrails().
-void ParentFluid::getPosRadVel(size_t n, Vec3R& xyz, Real& radius, Vec3R& velocity) const {
-	getPosRad(n, xyz, radius);
-	// Assume that all positions will be divided by 4 for the final render
-	Vector3D v = diffuse_particles->at(n)->velocity / 4;
-	velocity.x() = v.x;
-	velocity.y() = v.y;
-	velocity.z() = v.z;
-}
