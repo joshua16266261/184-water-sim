@@ -140,15 +140,16 @@
     
 
 <h2 align="middle">Mesh Generation</h2>
-<h3>Iso-function/Isovalue</h3>
-<p>
-    As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube). Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction. The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density.
-</p>
+
 <h3>Marching Cubes</h3>
 <p>
-    For mesh generation the marching cubes algorithm was implemented. We subdivide the entire object space into a multitude of smaller marching cubes. Then for each cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting that vertex based on the vertex’s isovalues. Then we generate a OBJ mesh file containing a list of 3D triangle positions and 3D triangle normal values. For our implementation, we also used a subset of code from this website that provided the list of all 256 different possible triangles we can render, and provided a way to generate an index into that list given a passed in cube, and for determining the 3D positions of the triangles.
-    <br /><br />
-    For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex. And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector. And for the triangle normals we modified the code subset that we used to calculate the normals the same way we calculated where to place the triangle, but with the cube vertex normals we previously calculated as the input.
+    For mesh generation we implemented the marching cubes algorithm. We subdivided the entire object space into a multitude of smaller marching cubes. Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex’s isovalues. Then we generate a OBJ mesh file containing a list of 3D triangle positions and 3D triangle normal values. For our implementation, we also used a subset of code from this website that: provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and for determining the 3D positions of the triangles.
+</p>
+<p>
+    As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube). Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction. The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density. 
+</p>
+<p>
+    For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex. And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector. And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, but with the cube vertex normals we previously calculated as the input.  
 </p>
 <center><img src="./images/marching.png"></center>
 
@@ -195,9 +196,8 @@
 
 <h1 align="middle">Lessons Learned</h1>
 <p>
-    The method we used for tuning parameters for the marching cubes algorithm was trial and error: we modified the ten parameters until we found a render that looked visually pleasing enough for the final product we wanted. Likewise for tuning the particle physics simulation parameters, we wrote code in jupyter notebook that automated the tuning process, and we inputted the results in matplotlib to visually verify the quality of the output based on our parameters. The lesson we learned that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
+    The lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is. The method we used for tuning parameters for the marching cubes algorithm was trial and error. And the method we used for tuning the particle physics simulation parameters was by using a jupyter notebook script that automated the tuning process, along with inputting the results into matplotlib to visually verify the quality of the output based on our parameters. Both methods of parameter tuning still took longer than we expected.
 </p>
-
 <h1 align="middle">References</h1>
 <ul>
     <li>
@@ -241,9 +241,9 @@
     </li>
     <li>
         <b>Fourth Teerakapibal:</b>
-        Worked on creating isofunction for voxel isovalue calculation
-        Worked on turning parameters for marching cubes and hashtable for speedup
-        Worked on converting triangle meshes to OBJ file
+        Worked on creating isofunction for voxel isovalue calculation.
+        Worked on turning parameters for marching cubes and hashtable for speedup.
+        Worked on converting triangle meshes to OBJ file.
     </li>
 </ul>
 
