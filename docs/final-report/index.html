@@ -145,6 +145,27 @@
 <h2 align="middle">Tuning Parameters</h2>
 
 <h2 align="middle">Speeding up Marching Cubes</h2>
+<h3>Implementing a hashtable for particle neighborhood searching</h3>
+
+<h3>Writing to disk to save memory</h3>
+<p>
+    Another issue that we encountered when performing marching cubes with many cubes is that our program would run out of memory.
+    To solve this, every 100,000 cubes that we iterate through, we write all the results to files and then clear the vector that stores the triangles.
+    Finally, at the end, we combine the files into a single <code>.obj</code> file.
+</p>
+
+<h3>Storing previously calculated isovalues</h3>
+<p>
+    To further speed up the program, we store previously calculated isovalues in a map.
+    Since up to 8 cubes can share a single vertex, storing these results allows us to avoid redundant calculations.
+    However, to avoid running out of memory, we throw away results that will no longer be needed. 
+</p>
+
+<h2 align="middle">Using .ply Files to Render Diffuse Particles</h2>
+<p>
+    Even though we tried to speed up our marching cubes algorithm as much as possible, it was still too slow to generate a mesh fine enough for diffuse particles.
+    We tried using OpenVDB to convert the particles to a mesh, but when that did not work, we decided to output the particle positions with <code>.ply</code> files and use Blender's built-in functionality to generate meshes from points.
+</p>
 
 <h1 align="middle">Results</h1>
 
@@ -171,7 +192,12 @@
 
 <h1 align="middle">Contributions</h1>
 <ul>
-    <li><b>Joshua Chen:</b> </li>
+    <li>
+        <b>Joshua Chen:</b>
+        Worked on particle fluid simulation and diffuse particle simulation.
+        Worked on speeding up Marching Cubes.
+        Determined how to render diffuse particles in Blender.
+    </li>
     <li><b>Marcus Lee:</b> </li>
     <li><b>Calvin Pham:</b> </li>
     <li><b>Fourth Teerakapibal:</b> </li>
