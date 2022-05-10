@@ -130,6 +130,8 @@
         Then we update the position accordingly.
     </li>
 </ul>
+
+<center><img src="./images/shower.gif"></center>
     
 
 <h2 align="middle">Mesh Generation</h2>
@@ -143,6 +145,7 @@
     <br /><br />
     For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex. And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector. And for the triangle normals we modified the code subset that we used to calculate the normals the same way we calculated where to place the triangle, but with the cube vertex normals we previously calculated as the input.
 </p>
+<center><img src="./images/marching.png"></center>
 
 <h3>Converting to .obj Files</h3>
 <p>
@@ -155,6 +158,7 @@
 <p>
     When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh. In order to achieve this high density, we need to try to pack a large number of particles in a small box. However, when we try generating a small box we were having issues with the particles blowing up. We decided to resolve this problem by creating a larger box and applying a small constant to the position of the particle to fix them within a smaller space. By doing this, we are not experiencing the blowing-up problem while making the particles denser in our cube.
 </p>
+<center><img src="./images/badparam.gif"></center>
 
 <h2 align="middle">Speeding up Marching Cubes</h2>
 <h3>Implementing a hashtable for particle neighborhood searching</h3>
@@ -182,6 +186,7 @@
 </p>
 
 <h1 align="middle">Results</h1>
+<center><img src="./images/final-diffuse.gif"></center>
 
 <h1 align="middle">Lessons Learned</h1>
 <p>
