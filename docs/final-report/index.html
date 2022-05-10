@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>Realistic Water Simulation with Spray, Foam, and Bubbles</title>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+  </script>
+  <script type="text/javascript"
+    src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 align="middle">Abstract</h1>
+
+<h1 align="middle">Technical Approach</h1>
+<h2 align="middle">Position-Based Fluid Simulation</h2>
+
+<h2 align="middle">Adding Spray, Foam, and Bubbles</h2>
+<p>
+    Our main goal with this project was adding diffuse particles to fluid simulations, and our code architecture closely mirrors our fluid simulation architecture.
+    <code>ParentFluid</code> is a struct which owns all the <code>DiffuseParticle</code> structs in the scene.
+    <code>ParentFluid</code> also has a pointer to the <code>Fluid</code> for the scene, which allows it to access the positions and velocities of all the <code>Particle</code> structs in the scene.
+    We implemented <a href="https://cg.informatik.uni-freiburg.de/publications/2012_CGI_sprayFoamBubbles.pdf" target="_blank" rel="noopener noreferrer">this paper</a> to advect and generate diffuse particles.
+</p>
+
+<h3>Pseudocode of Algorithm</h3>
+<ol>
+    <li>Build spatial map of fluid particles with grid width $2h$</li>
+    <li>For all foam particles $i$:</li>
+    <ol type="a">
+        <li>If time to live of $i$ $\leq 0$: erase $i$</li>
+        <li>Else: decrement time to live of $i$ by $\Delta t$</li>
+    </ol>
+    <li>For all diffuse particles:</li>
+    <ol type="a">
+        <li>Perform advection and collision detection/response</li>
+    </ol>
+    <li>Build spatial map of fluid particles with grid width $h$</li>
+    <li>For all fluid particles $i$:</li>
+    <ol type="a">
+        <li>Calculate $\rho_i$ (as defined in <b>Position-Based Fluid Simulation</b>)</li>
+    </ol>
+    <li>For all fluid particles $i$:</li>
+    <ol type="a">
+        <li>Calculate the surface normal vector $\pmb{n}_i$ (as given by <a href="https://matthias-research.github.io/pages/publications/sca03.pdf" target="_blank" rel="noopener noreferrer">this paper</a>)</li>
+    </ol>
+    <li>For all fluid particles:</li>
+    <ol type="a">
+        <li>Calculate $n_d$ and generate diffuse particles</li>
+    </ol>
+</ol>
+
+<h3>Generation</h3>
+<p>
+    To determine the number of diffuse particles $n_d$ that fluid particle $i$ generates, we calculate $I_k$, $I_{ta}$, and $I_{wc}$, which indicate the potential to generate diffuse particles due to kinetic energy, trapped air, and wave crests, respectively.
+    To ensure that all the potentials are between 0 and 1, we use a clamping function $\Phi$ which is defined as
+    $$\Phi(I, \tau^{\text{min}}, \tau^{\text{max}}) = \frac{\min(I, \tau^{\max}) - \min(I, \tau^{\min})}{\tau^{\max} - \tau^{\min}}$$
+    where $\tau^{\min}, \tau^{\max}$ are user-defined parameters.
+</p>
+
+<p>
+    The potentials are calculated by:
+</p>
+<ul>
+    <li>
+        $I_k = \Phi (E_{k, i}, \tau_k^{\text{min}}, \tau_k^{\text{max}})$, where $E_{k, i} = \frac{1}{2} m_i \|\pmb{v}_i\|^2$ is the kinetic energy of particle $i$.
+    </li>
+    <li>
+        $I_{ta} = \Phi (v_i^{\text{diff}}, \tau_{ta}^{\text{min}}, \tau_{ta}^{\text{max}})$, where $v_i^{\text{diff}} = \sum_j \|\pmb{v}_{ij}\| (1 - \pmb{\hat{v}}_{ij} \cdot \pmb{\hat{x}}_{ij}) W (\pmb{x}_{ij}, h)$, with $\pmb{v}_{ij} = \pmb{v}_i - \pmb{v}_j$, $\pmb{x}_{ij} = \pmb{x}_i - \pmb{x}_j$, the hat notation denoting normalization, and 
+        $$W (\pmb{x}_{ij}, h) = \begin{cases} 1 - \|\pmb{x}_{ij}\| / h & \|\pmb{x}_{ij}\| \leq h \\ 0 & \text{otherwise} \end{cases}$$
+        This assumes that the amount of trapped air is larger if fluid particles move towards each other.
+    </li>
+    <li>
+        $I_{wc} = \Phi (\tilde{\kappa}_i \cdot \delta_i^{vn}, \tau_{wc}^{\text{min}}, \tau_{wc}^{\text{max}})$, where $\tilde{\kappa}_i = \sum\limits_{\{ j : \pmb{\hat{x}}_{ji} \cdot \pmb{\hat{n}}_i < 0 \}} (1 - \pmb{\hat{n}}_i \cdot \pmb{\hat{n}}_j) W(\pmb{x}_{ij}, h)$ approximates the curvature and considers only convex regions, and $\delta_i^{vn} = \begin{cases} 0 & \pmb{\hat{v}}_i \cdot \pmb{\hat{n}}_i < 0.6 \\ 1 & \text{otherwise} \end{cases}$ checks if the fluid particle moves in the normal direction, to prevent situations such as the edges of a cube being considered as wave crests.
+    </li>
+</ul>
+<br>
+<p>
+    After calculating the potentials,
+    $$n_d = I_k (k_{ta} I_{ta} + k_{wc} I_{wc}) \Delta t$$
+    gives us the number of diffuse particles that fluid particle $i$ generates.
+    To create the generated diffuse particles, we need two vectors $\pmb{e}_1'$ and $\pmb{e}_2'$ which are orthogonal to $\pmb{v}_i$.
+    To achieve this, we decided to use Gram-Schmidt to get $\pmb{e}_1'$ by orthogonalizing one of the standard unit basis vectors with $\pmb{v}_i$, and then taking $\pmb{e}_2' = \pmb{e}_1' \times \pmb{v}_i$.
+    We then consider a cylinder with radius equal to the radius of the fluid particle (which we always take to be $1/10$), height $\| \Delta t \pmb{v}_i \|$, and base spanned by $\pmb{e}_1'$ and $\pmb{e}_2'$.
+    We then place diffuse particles uniformly in that cylinder offset by the fluid particle's position, and we initialize the velocity of the diffuse particle to be $r \cos \theta \pmb{e}_i' + r \sin \theta \pmb{e}_2' + \pmb{v}_i$, where $r, \theta$ are the typical cylindrical coordinates.
+</p>
+<p>
+    Finally, for each generated diffuse particle, we classify it as spray if it has less than 6 fluid particle neighbors, bubbles if it has more than 20 fluid particle neighbors, and foam otherwise.
+    If it is foam, we initialize its time to live to be $n_d$, to model the effect of larger foam clusters being more stable than smaller ones.
+</p>
+
+<h3>Advection</h3>
+<ul>
+    <li>
+        <b>Spray:</b>
+        The motion of spray particles is not affected by water, so the position and velocity update is just performed using Euler's method with any external forces present (in our simulations, we only use gravity).
+    </li>
+    <li>
+        <b>Foam:</b>
+        To model a foam particle being transported by the water, we compute the averaged local fluid velocity at the particle's position $\pmb{x}_d$ as
+        $$\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t) = \frac{\sum_f \frac{\pmb{x}_f (t + \Delta t) - \pmb{x}_f (t)}{\Delta t} \cdot K (\pmb{x}_d -  \pmb{x}_f (t), h)}{ \sum_f K (\pmb{x}_d -  \pmb{x}_f (t), h)}$$
+        where $K$ is the cubic spline kernel defined as
+        $$K(\pmb{x}, h) = \sigma \begin{cases} 1 - 1.5 q^2 + 0.75 q^3 & q \leq 1 \\ 0.25 (2 - q)^3 & 1 < q \leq 2 \\ 0 & \text{otherwise} \end{cases}$$
+        with $q = \|\pmb{x}\| / h$ and $\sigma = \frac{1}{\pi h^3}$.
+        <br>
+        Because $\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t)$ is not defined if there are no fluid neighbors, and the paper does not specify how to handle this case, we decided to erase the particle if this ever happens.
+        Then we update the foam particle's position using the averaged local fluid velocity, but we do not update its velocity in order to constrain it to the fluid surface.
+    </li>
+    <li>
+        <b>Bubbles:</b>
+        To model buoyancy acting on bubble particles, we update the velocity as $$\pmb{v} (t + \Delta t) = \pmb{v}(t) + \Delta t \left( -k_b \pmb{g} + k_d \frac{\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t) - \pmb{v} (t) }{ \Delta t}  \right)$$
+        where $k_b$ and $k_d$ are parameters which control buoyancy and drag (in our simulations, we use 0.5 for both).
+        Then we update the position accordingly.
+    </li>
+</ul>
+    
+
+<h2 align="middle">Mesh Generation</h2>
+<h3>Iso-function/Isovalue</h3>
+
+<h3>Marching Cubes</h3>
+
+<h3>Converting to .obj Files</h3>
+
+<h2 align="middle">Rendering in Blender</h2>
+
+<h1 align="middle">Problems Encountered</h1>
+<h2 align="middle">Tuning Parameters</h2>
+
+<h2 align="middle">Speeding up Marching Cubes</h2>
+
+<h1 align="middle">Results</h1>
+
+<h1 align="middle">Lessons Learned</h1>
+
+<h1 align="middle">References</h1>
+<ul>
+    <li>
+        <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a>
+    </li>
+    <li>
+        <a href="https://cg.informatik.uni-freiburg.de/publications/2012_CGI_sprayFoamBubbles.pdf" target="_blank" rel="noopener noreferrer">Unified Spray, Foam and Bubbles for Particle-Based Fluids</a>
+    </li>
+    <li>
+        <a href="https://matthias-research.github.io/pages/publications/sca03.pdf" target="_blank" rel="noopener noreferrer">Particle-Based Fluid Simulation for Interactive Applications</a>
+    </li>
+    <li>
+        <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">Polygonising a scalar field</a>
+    </li>
+    <li>
+        <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf/" target="_blank" rel="noopener noreferrer">Marching Cubes: A High Resolution 3D Surface Construction Algorithm</a>
+    </li>
+</ul>
+
+<h1 align="middle">Contributions</h1>
+<ul>
+    <li><b>Joshua Chen:</b> </li>
+    <li><b>Marcus Lee:</b> </li>
+    <li><b>Calvin Pham:</b> </li>
+    <li><b>Fourth Teerakapibal:</b> </li>
+</ul>
+
+</body>
+</html>
