@@ -134,19 +134,28 @@
 
 <h2 align="middle">Mesh Generation</h2>
 <h3>Iso-function/Isovalue</h3>
-
+<p>
+    As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube). Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction. The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density.
+</p>
 <h3>Marching Cubes</h3>
 
 <h3>Converting to .obj Files</h3>
-
+<p>
+    After running the marching cube algorithm, we are able to generate a list of triangle meshes that represent the surface at each frame. In order to input our meshes into our rendering software, we need to turn triangle meshes into an OBJ file. In order to do this, we need to write code that will write our triangle vertices, normals, and face definitions into a .obj file. The code is relatively straightforward, we write the vertices, normal, and face definition line by line into a file.
+</p>
 <h2 align="middle">Rendering in Blender</h2>
 
 <h1 align="middle">Problems Encountered</h1>
 <h2 align="middle">Tuning Parameters</h2>
+<p>
+    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh. In order to achieve this high density, we need to try to pack a large number of particles in a small box. However, when we try generating a small box we were having issues with the particles blowing up. We decided to resolve this problem by creating a larger box and applying a small constant to the position of the particle to fix them within a smaller space. By doing this, we are not experiencing the blowing-up problem while making the particles denser in our cube.
+</p>
 
 <h2 align="middle">Speeding up Marching Cubes</h2>
 <h3>Implementing a hashtable for particle neighborhood searching</h3>
-
+<p>
+    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh. In order to achieve this high density, we need to try to pack a large number of particles in a small box. However, when we try generating a small box we were having issues with the particles blowing up. We decided to resolve this problem by creating a larger box and applying a small constant to the position of the particle to fix them within a smaller space. By doing this, we are not experiencing the blowing-up problem while making the particles denser in our cube.
+</p>
 <h3>Writing to disk to save memory</h3>
 <p>
     Another issue that we encountered when performing marching cubes with many cubes is that our program would run out of memory.
@@ -200,7 +209,12 @@
     </li>
     <li><b>Marcus Lee:</b> </li>
     <li><b>Calvin Pham:</b> </li>
-    <li><b>Fourth Teerakapibal:</b> </li>
+    <li>
+        <b>Fourth Teerakapibal:</b>
+        Worked on creating isofunction for voxel isovalue calculation
+        Worked on turning parameters for marching cubes and hashtable for speedup
+        Worked on converting triangle meshes to OBJ file
+    </li>
 </ul>
 
 </body>
