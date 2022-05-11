@@ -31,9 +31,112 @@
 </div>
 
 <h1 align="middle">Abstract</h1>
+    <p>
+        Realistic fluid simulations is an ever expanding and improving field in computer graphics. Several previous groups have attempted to 
+        tackle this topic and ended up creating water simulations that are physically accurate, but look more akin to jello. We are interested 
+        in creating a more realistic fluid simulation by also implementing water-air interactions like bubbles, spray, and foam. To do so, we implemented 
+        Position Based Fluids by Macklin and Müller for the underlying fluid simulation and Unified Spray, Foam and Bubbles for Particle-Based Fluids 
+        by Ihmsen et al. to simulate water-air interactions. To convert our fluid and water-air particles into a mesh we implemented the marching cubes 
+        algorithm using isotropic kernels. Finally we rendered the mesh using Blender’s “Cycles” path tracing engine.
+    </p>
+    <h1 align="middle">Technical Approach</h1>
+    
+    <h2 align="middle">Position-Based Fluid Simulation</h2>
+    <p>
+        To implement our project, we needed to start with a particle based water simulation. Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code>
+        structs. Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity. We also have a <code>CollisionObject</code> and <code>Plane</code> struct 
+        that are passed into the <code>Fluid</code> struct which we use to contain and move the <code>Particles</code>. We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
+    </p>
+    
+    <h3>Pseudocode of Algorithm</h3>
+    <ol>
+        <li>For all Particles i:</li>
+        <ol type = "a">
+            <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>
+            <li>Build spatial map of Particles</li>
+        </ol>
+        <li>For all Particles i:</li>
+        <ol type="a">
+            <li>Calculate neighbors (all particles within a distance h)</li>
+        </ol>
+        <li>While iterations < SolverIterations:</li>
+        <ol type="a">
+            <li>For all Particles i:</li>
+            <ol type = "i">
+                <li>Calculate \(\lambda_i\) (as in Eq 11 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
+            </ol>
+            <li>For all Particles i:</li>
+            <ol type = "i">
+                <li>Calculate \(\Delta \textbf{p}_i\) (as in Eq 14 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
+                <li>Handle collisions</li>
+            </ol>
+            <li>For all Particles i:</li>
+            <ol type = "i">
+                <li>Update position \(\textbf{x}_i^{\textbf{*}}\Leftarrow \textbf{x}_i^{\textbf{*}}+\Delta \textbf{p}_{i}\)</li>
+            </ol>
+        </ol>
+        <li>For all Particles i:</li>
+        <ol type = "i">
+            <li>Calculate and store viscosity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{visc}\)</li>
+            <li>Calculate \(\omega_i\) (as in Eq. 15 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
+        </ol>
+        <li>For all Particles i:</li>
+        <ol type = "i">
+            <li>Calculate and store vorticity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{vort}\)</li>
+        </ol>
+        <li>For all Particles i:</li>
+        <ol type = "i">
+            <li>Update velocity \(\textbf{v}_{i}\Leftarrow \textbf{v}_{i}^{temp}\)</li>
+        </ol>
+    </ol>
+    
+    <h3>Incompressibility</h3>
+    <p>
+        The incompressibility constraint applies a small change in position \(\Delta \textbf{p}_i\) to keep the volume of the fluid constant. We start by utilizing the Poly6 Kernel
+        \[W(r, h) = \begin{cases} (h^2 - r^2)^3 & 0 \leq r \leq h \\ 0 & otherwise, \end{cases}\]
 
-<h1 align="middle">Technical Approach</h1>
-<h2 align="middle">Position-Based Fluid Simulation</h2>
+        to estimate the density of each particle \(\rho_i = \sum_jm_jW(\textbf{p}_i-\textbf{p}_j, \ h)\).
+        
+
+        We use the particle density \(\rho_i\) and fluid's rest density \(\rho_0\) to calculate a density constraint \(C_i\) 
+        \[C_i =\frac{\rho_i}{\rho_0}-1\]
+
+        We also calculate the gradient of the constraint function \(\nabla_{\textbf{p}_k}C_i\)
+        \[\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0}\begin{cases} \sum_{j}\nabla_{\textbf{p}_k}W(\textbf{p}_i-\textbf{p}_j,h) & if \ \  k = i \\\\-\nabla_{\textbf{p}_k}W(\textbf{p}_i-\textbf{p}_j,h) & if \ \ k = j \end{cases}\]
+       
+        To calculate a scaling factor \(\lambda_i\) with \(\varepsilon\) as a relaxation hyperparameter.<br>
+        \[\lambda_i = -\frac{C_i(\textbf{p}_1,...,\textbf{p}_n)} {\sum_k|\nabla_{\textbf{p}_k}C_i|^2+\varepsilon}\]
+
+        We also add an artifical pressure with a fixed distance \(\Delta \textbf{q}\), and small constants k and n. 
+        \[s_{corr} = -k\left(\frac{W(\textbf{p}_i-\textbf{p}_j,h)}{W(\Delta\textbf{q},h)}\right)^n\]
+
+        We finally calculate \(\Delta \textbf{p}_i\) to enforce incompressibility.
+        \[\Delta\textbf{p}_i=\frac{1}{\rho_0}\sum_{j}(\lambda_i + \lambda_j + s_{corr})\nabla W (\textbf{p}_i-\textbf{p}_j, h)\]
+    </p>
+    
+    <h3>Collision Detection and Response</h3>
+    <p>
+        Each wall has a point on its plane and a normal vector assigned which defines which side a particle would collide with. To detect collision we check that the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
+        If collision is detected, we calculate where the particle would've collided with the wall and update the particle's incompressibility constraint \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} - (1 + c_R \frac{d}{\Delta t |\textbf{v}_i^{temp}|})(\textbf{v}_i^{temp} \cdot  \textbf{n})\textbf{n}\]
+        If we don't detect a collision, we set the particle's temp velocity to the particle's change in position divided by the time step.
+        \[\textbf{v}_i^{temp} = (\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev})/\Delta t\]
+    </p>
+    
+    <h3>Viscosity</h3>
+    <p>
+        Viscosity is a fluid's tendency to resist a change in flow. To implement viscosity we add an artificial viscosity calculation with a small constant c to our particle's temp velocity.
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + c\sum_j\textbf{v}_{ij}W(\textbf{p}_i-\textbf{p}_j,h)\]
+    </p>
+    
+    <h3>Vorticity</h3>
+    <p>
+        Vorticity is the tendency of a fluid to rotate as it moves along its path. To implement vorticity we calculate a vorticity estimator
+        \(\omega_i = \nabla \times \textbf{v} = \sum_j(\textbf{v}_{j}-\textbf{v}_{i}) \times \nabla_{\textbf{p}_j}W(\textbf{p}_i-\textbf{p}_j,h)\).
+        We then calculate and apply a corrective velocity to our particle.
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + \varepsilon(\frac{\nabla|\omega|_i}{|\nabla|\omega|_i|}\times\omega_i)\]
+        
+    </p>
 
 <div align="middle">
     <img src="images/fluid-matplot.gif" align="middle" width="400px"/>
@@ -189,10 +292,18 @@
     The code is relatively straightforward: we write the vertices, normal, and face definition line by line into a file.
 </p>
 <h2 align="middle">Rendering in Blender</h2>
+<p>
+    To import our meshes into blender, we used a third party addon called Stop Motion OBJ. It allowed us to import all of our OBJ files 
+    as a mesh sequence and easily animate them. To make the particle mesh look like water we used a glass BSDF with the same index of 
+    refraction as water and a light blue shading. Because our raw mesh looked too rough for the glass BSDF to work, we implemented a 
+    remeshing modifier that converts our mesh into voxels to smooth it out. To visualize our diffuse particles, we imported them as a .PLY 
+    file using the same third party addon. This imported them as points, which we converted to a volume then a mesh. 
+    This also looked too bumpy, so we used the remeshing modifier to smooth it out.
+</p>
 
 <div align="middle">
     <img src="images/no-diffuse.gif" align="middle" width="400px"/>
-    <figcaption align="middle">Water rendered in Blender (no diffuse particles)</figcaption>
+    <figcaption align="middle">Water rendered in Blender (without diffuse particles)</figcaption>
 </div>
 
 <h1 align="middle">Problems Encountered</h1>
@@ -280,7 +391,11 @@
         Worked on speeding up Marching Cubes.
         Determined how to render diffuse particles in Blender.
     </li>
-    <li><b>Marcus Lee:</b> </li>
+    <li><b>Marcus Lee:</b> 
+        Worked on particle fluid simulation and diffuse particle simulation.
+        Worked on parameter tuning for fluid and diffuse simulations.
+        Determined how to render fluid particles in Blender.
+    </li>
     <li>
         <b>Calvin Pham:</b>
         Worked on the implementation of marching cubes algorithm.
