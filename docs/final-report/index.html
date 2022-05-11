@@ -128,33 +128,35 @@
     
     <h2 align="middle">Position-Based Fluid Simulation</h2>
     <p>
-        To implement our project, we needed to start with a particle based water simulation. Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code>
-        structs. Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity. We also have a <code>CollisionObject</code> and <code>Plane</code> struct 
-        that are passed into the <code>Fluid</code> struct which we use to contain and move the <code>Particles</code>. We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
-        To accelerate the simulation, we implemented parallelism and a hashtable to store a spatial map of <code>Particles</code>. The spatial map of <code>Particles</code> divides space into cubes that are \(h\) (where \(h\) is a user-defined parameter) wide.
+        To implement our project, we needed to start with a particle based water simulation.
+        Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code> structs.
+        Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity.
+        We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
+        To accelerate the simulation, we implemented and a hashtable to store a spatial map of <code>Particles</code>.
+        The spatial map of <code>Particles</code> divides space into cubes that are \(h\) (where \(h\) is a user-defined parameter) wide.
         Each particle is assigned to a cube, so when we search for a particle's neighbors, which are all the particles within \(h\) distance away, we only search the cube the particle is in and its immediate neighbors. 
     </p>
     <!--We implemented the algorithm slightly differently from the paper. We had a temporary velocity that updated at the very end rather than updating velocity then applying
     vort and visc then updating position. idk why we did it that way-->
     
-    
     <h3>Incompressibility</h3>
     <p>
-        The incompressibility constraint applies a small change in position \(\Delta \textbf{p}_i\) to keep the volume of the fluid constant. We start by utilizing the Poly6 Kernel
-        \[W_{poly6} (\|r\|, h) = \begin{cases} (h^2 - \|r\|^2)^3 & 0 \leq \|r\| \leq h \\ 0 & otherwise, \end{cases}\]
+        The incompressibility constraint applies a small change in position \(\Delta \textbf{p}_i\) to keep the volume of the fluid constant.
+        We estimate the density of each particle as \(\rho_i = \sum_j m_j W_{poly6} (\textbf{p}_i-\textbf{p}_j, \ h)\), where
+        \(W_{poly6} (\|\pmb{r}\|, h) = \begin{cases} (h^2 - \|\pmb{r}\|^2)^3 & 0 \leq \|\pmb{r}\| \leq h \\ 0 & otherwise, \end{cases}\).
 
-        to estimate the density of each particle \(\rho_i = \sum_j m_j W_{poly6} (\textbf{p}_i-\textbf{p}_j, \ h)\).
+        <br>
         
         We use the particle density \(\rho_i\) and fluid's rest density \(\rho_0\) to calculate a density constraint \(C_i\) 
         \[C_i =\frac{\rho_i}{\rho_0}-1\]
 
-        We also use the gradient of the Spiky Kernel
-        \[\nabla W_{spiky}(\textbf{r},h) = -\textbf{r} \frac{45}{\pi h^6 \|\pmb{r}\|}(h- \|\pmb{r}\|)^2\]
-
         After doing some algebraic manipulation, we derived an equivalent expression which was easier to implement in code to what is presented in the paper for calculating the gradient of the constraint function \(\nabla_{\textbf{p}_k}C_i\)
-        \[\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0} \left(\left\|\sum_j\nabla_{spiky} W(\textbf{p}_i-\textbf{p}_j, h)\right\|^2 +\sum_j\|\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\|^2 \right)\]
+        \[\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0} \left(\left\|\sum_j\nabla W_{spiky}(\textbf{p}_i-\textbf{p}_j, h)\right\|^2 +\sum_j\|\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\|^2 \right)\]
         
-        which is used to calculate a scaling factor \(\lambda_i\) with \(\epsilon\) as a relaxation hyperparameter.<br>
+        where
+        \(\nabla W_{spiky}(\textbf{r},h) = -\textbf{r} \frac{45}{\pi h^6 \|\pmb{r}\|}(h- \|\pmb{r}\|)^2\).
+
+        \(\nabla_{\textbf{p}_k}C_i\) is used to calculate a scaling factor \(\lambda_i\) with \(\epsilon\) as a relaxation parameter.<br>
         \[\lambda_i = -\frac{C_i(\textbf{p}_1, \ldots ,\textbf{p}_n)} {\sum_k|\nabla_{\textbf{p}_k}C_i|^2+\epsilon}\]
 
         We also add an artifical pressure with a fixed vector \(\Delta \textbf{q}\), and small constants \(k\) and \(n\). 
@@ -167,6 +169,9 @@
     <h3>Collision Detection and Response</h3>
     <p>
         <!--Since the paper didn't specify how they implemented collision detection / response, we implemented it from the other collision paper-->
+        Since the paper did not specify how to handle collisions, and thought that the Project 4 method of collision response would not preserve energy well enough, we chose to implement
+        <a href="https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.1856&rep=rep1&type=pdf" target="_blank" rel="noopener noreferrer">this paper</a>
+        for collision response.
         Each plane has a point and a normal vector which defines the side that the particle should always be on.
         To detect collision we check if the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
         If collision is detected, we calculate where the particle would've collided with the wall and update the particle's incompressibility constraint \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
@@ -187,8 +192,10 @@
         \(\omega_i = \nabla \times \textbf{v} = \sum_j(\textbf{v}_{j} - \textbf{v}_{i}) \times \nabla_{\textbf{p}_j} W_{spiky} (\textbf{p}_i-\textbf{p}_j,h)\).
         We then calculate and apply a corrective velocity to our particle.
         
-        \textbf{v}_i^{temp} = \textbf{v}_i^{temp} + \varepsilon (\sum_j \left(\frac{|\omega_j|-|\omega_i|}{\textbf{p}_j - \textbf{p}_i} \right)\times \omega_i)\Delta t 
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + \varepsilon \frac{\nabla \|\pmb{\omega}\|_i}{\| \nabla \|\pmb{\omega}\|_i \|} \times \pmb{\omega}_i \Delta t \]
         where \(\varepsilon\) is a separate vorticity parameter (not to be confused with the relaxation parameter \(\epsilon\) used in enforcing incompressibility).
+
+        In order to calculate \(\nabla \|\pmb{\omega}\|_i\), we chose to approximate it as \( \sum_j \left(\frac{\left \|\pmb{\omega}_j\right \|-\left \|\pmb{\omega}_i\right \|}{\textbf{p}_j - \textbf{p}_i} \right) \).
     </p>
 
 <div align="middle">
@@ -257,8 +264,7 @@
         <b>Foam:</b>
         To model a foam particle being transported by the water, we compute the averaged local fluid velocity at the particle's position \(\pmb{x}_d\) as
         \[\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t) = \frac{\sum_f \frac{\pmb{x}_f (t + \Delta t) - \pmb{x}_f (t)}{\Delta t} \cdot K (\pmb{x}_d -  \pmb{x}_f (t), h)}{ \sum_f K (\pmb{x}_d -  \pmb{x}_f (t), h)}\]
-        where \(K\) is the cubic spline kernel defined as
-        \[K(\pmb{x}, h) = \sigma \begin{cases} 1 - 1.5 q^2 + 0.75 q^3 & q \leq 1 \\ 0.25 (2 - q)^3 & 1 < q \leq 2 \\ 0 & \text{otherwise} \end{cases}\]
+        where \(K = \sigma \begin{cases} 1 - 1.5 q^2 + 0.75 q^3 & q \leq 1 \\ 0.25 (2 - q)^3 & 1 < q \leq 2 \\ 0 & \text{otherwise} \end{cases} \) is the cubic spline kernel
         with \(q = \|\pmb{x}\| / h\) and \(\sigma = \frac{1}{\pi h^3}\).
         <br>
         Because \(\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t)\) is not defined if there are no fluid neighbors, and the paper does not specify how to handle this case, we decided to erase the particle if this ever happens.
@@ -269,7 +275,7 @@
         To model buoyancy acting on bubble particles, we update the velocity as
         \[\pmb{v} (t + \Delta t) = \pmb{v}(t) + \Delta t \left( -k_b \pmb{g} + k_d \frac{\pmb{\tilde{v}} (\pmb{x}_d, t + \Delta t) - \pmb{v} (t) }{ \Delta t}  \right)\]
         where \(k_b\) and \(k_d\) are parameters which control buoyancy and drag (in our simulations, we use 0.5 for both).
-        Then we update the position accordingly.
+        Then we update the position using Euler's method.
     </li>
 </ul>
 
@@ -357,12 +363,7 @@
 <h3>Implementing a hashtable for particle neighborhood searching</h3>
 <p>
     To run the marching cubes algorithm, we need to find all the particles within a certain distance from each voxel.
-    However, iterating through all the particles and testing the distances is way too inefficient.
-    Instead, we came up with a box hashing algorithm that will reduce our search space.
-    When we initialize our marching cubes object, we pre-hash all the particles into predefined boxes of our chosen size.
-    To find the particles within a radius, we look through all the neighboring boxes to the voxel's hashed box.
-    The smaller we make our box hash, the faster our algorithm would run since we are reducing the search space.
-    However, we needed to make sure that our box hash size is less than our search radius to not skip over any particles.
+    To do this efficiently, we use the same hashmap as used in the fluid simulation.
 </p>
 
 <h3>Storing previously calculated isovalues</h3>
