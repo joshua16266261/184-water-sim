@@ -23,7 +23,6 @@
 </head>
 
 <body>
-
 <h1 align="middle">CS184: Realistic Water Simulation with Spray, Foam, and Bubbles </h1>
 
 <h3 align="middle">Marcus Lee, Joshua Chen, Fourth Teerakapibal, Calvin Pham </h3>
@@ -76,7 +75,6 @@
     </ol>
 </ol>
 -->
-
 
 <h3>Generation</h3>
 <p>
@@ -160,15 +158,23 @@
 <h3>Marching Cubes</h3>
 <p>
     For mesh generation we implemented the marching cubes algorithm from the
-    <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf/" target="_blank" rel="noopener noreferrer">marching cubes paper</a>. We subdivided the entire object space into a multitude of smaller marching cubes. Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex’s isovalues. Then we generate a OBJ mesh file containing a list of 3D triangle positions and 3D triangle normal values. For our implementation, we also used a subset of code from
+    <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf" target="_blank" rel="noopener noreferrer">marching cubes paper</a>.
+    We subdivided the entire object space into a multitude of smaller marching cubes.
+    Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex's isovalues.
+    Then we generate a <code>.obj</code> mesh file containing a list of 3D triangle positions and 3D triangle normal values.
+    For our implementation, we also used a subset of code from
     <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">the Polygonize website</a>
-    that: provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and for determining the 3D positions of the triangles.
+    that provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and determined the 3D positions of the triangles.
 </p>
 <p>
-    As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube). Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction. The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density. 
+    As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube).
+    Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction.
+    The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density. 
 </p>
 <p>
-    For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex. And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector. And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, but with the cube vertex normals we previously calculated as the input.  
+    For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex.
+    And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector.
+    And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, but with the cube vertex normals we previously calculated as the input.  
 </p>
 <div align="middle">
     <img src="images/marching.png"/>
@@ -177,7 +183,10 @@
 
 <h3>Converting to .obj Files</h3>
 <p>
-    After running the marching cube algorithm, we are able to generate a list of triangle meshes that represent the surface at each frame. In order to input our meshes into our rendering software, we need to turn triangle meshes into an OBJ file. In order to do this, we need to write code that will write our triangle vertices, normals, and face definitions into a .obj file. The code is relatively straightforward, we write the vertices, normal, and face definition line by line into a file.
+    After running the marching cube algorithm, we are able to generate a list of triangle meshes that represent the surface at each frame.
+    In order to input our meshes into our rendering software, we need to turn triangle meshes into a <code>.obj</code> file.
+    In order to do this, we need to write code that will write our triangle vertices, normals, and face definitions into a <code>.obj</code> file.
+    The code is relatively straightforward: we write the vertices, normal, and face definition line by line into a file.
 </p>
 <h2 align="middle">Rendering in Blender</h2>
 
@@ -189,7 +198,11 @@
 <h1 align="middle">Problems Encountered</h1>
 <h2 align="middle">Tuning Parameters</h2>
 <p>
-    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh. In order to achieve this high density, we need to try to pack a large number of particles in a small box. However, when we try generating a small box we were having issues with the particles blowing up. We decided to resolve this problem by creating a larger box and applying a small constant to the position of the particle to fix them within a smaller space. By doing this, we are not experiencing the blowing-up problem while making the particles denser in our cube.
+    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh.
+    In order to achieve this high density, we tried to pack a large number of particles in a small box.
+    However, when we tried generating a small box we were having issues with the particles getting launched upwards.
+    We decided to resolve this problem by using a fixed particle density with a larger box and then scaling down the positions of each particle after simulating.
+    By doing this, we are did not experience the blowing-up problem while making the particles denser in our cube.
 </p>
 <div align="middle">
     <img src="images/badparam.gif" align="middle" width="400px"/>
@@ -199,7 +212,13 @@
 <h2 align="middle">Speeding up Marching Cubes</h2>
 <h3>Implementing a hashtable for particle neighborhood searching</h3>
 <p>
-    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh. In order to achieve this high density, we need to try to pack a large number of particles in a small box. However, when we try generating a small box we were having issues with the particles blowing up. We decided to resolve this problem by creating a larger box and applying a small constant to the position of the particle to fix them within a smaller space. By doing this, we are not experiencing the blowing-up problem while making the particles denser in our cube.
+    To run the marching cubes algorithm, we need to find all the particles within a certain distance from each voxel.
+    However, iterating through all the particles and testing the distances is way too inefficient.
+    Instead, we came up with a box hashing algorithm that will reduce our search space.
+    When we initialize our marching cubes object, we pre-hash all the particles into predefined boxes of our chosen size.
+    To find the particles within a radius, we look through all the neighboring boxes to the voxel's hashed box.
+    The smaller we make our box hash, the faster our algorithm would run since we are reducing the search space.
+    However, we needed to make sure that our box hash size is less than our search radius to not skip over any particles.
 </p>
 <h3>Writing to disk to save memory</h3>
 <p>
@@ -215,7 +234,7 @@
     However, to avoid running out of memory, we throw away results that will no longer be needed. 
 </p>
 
-<h2 align="middle">Using .ply Files to Render Diffuse Particles</h2>
+<h2 align="middle">Using <code>.ply</code> Files to Render Diffuse Particles</h2>
 <p>
     Even though we tried to speed up our marching cubes algorithm as much as possible, it was still too slow to generate a mesh fine enough for diffuse particles.
     We tried using OpenVDB to convert the particles to a mesh, but when that did not work, we decided to output the particle positions with <code>.ply</code> files and use Blender's built-in functionality to generate meshes from points.
@@ -226,7 +245,9 @@
 
 <h1 align="middle">Lessons Learned</h1>
 <p>
-    The lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is. The method we used for tuning parameters for the marching cubes algorithm was trial and error. And the method we used for tuning the particle physics simulation parameters was by using a jupyter notebook script that automated the tuning process, along with inputting the results into matplotlib to visually verify the quality of the output based on our parameters. Both methods of parameter tuning still took longer than we expected.
+    The lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
+    The method we used for tuning parameters for the marching cubes algorithm was trial and error, and for tuning the particle physics simulation parameters, we wrote a Jupyter Notebook script that automated the tuning process, along with plotting the results in Matplotlib to visually verify the quality of the output based on our parameters.
+    Both methods of parameter tuning still took longer than we expected.
 </p>
 <h1 align="middle">References</h1>
 <ul>
@@ -247,11 +268,8 @@
         <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">Polygonising a scalar field</a>
     </li>
     <li>
-        <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf/" target="_blank" rel="noopener noreferrer">Marching Cubes: A High Resolution 3D Surface Construction Algorithm</a>
+        <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf" target="_blank" rel="noopener noreferrer">Marching Cubes: A High Resolution 3D Surface Construction Algorithm</a>
     </li>
-    
-
-    
 </ul>
 
 <h1 align="middle">Contributions</h1>
