@@ -51,16 +51,16 @@
         algorithm using isotropic kernels. Finally we rendered the mesh using Blender's “Cycles” path tracing engine.
     </p>
     <h1 align="middle">Technical Approach</h1>
-
+    <!--
     <div class="row">
         <div class="column">
             <h3>Pseudocode of Fluid Simulation</h3>
             <ol>
                 <li>For all Particles \(i\):</li>
                 <ol type = "a">
-                    <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>
-                    <li>Build spatial map of Particles</li>
+                    <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>   
                 </ol>
+                <li>Build spatial map of Particles</li>
                 <li>For all Particles \(i\):</li>
                 <ol type="a">
                     <li>Calculate neighbors</li>
@@ -96,6 +96,7 @@
                 </ol>
             </ol>
         </div>
+        
         <div class="column">
             <h3>Pseudocode of Difuse Particle Simulation</h3>
             <ol>
@@ -125,16 +126,18 @@
             </ol>
         </div>
     </div>
-    
+    -->
     <h2 align="middle">Position-Based Fluid Simulation</h2>
     <p>
-        To implement our project, we needed to start with a particle based water simulation.
+        To implement our project, we started with a particle based water simulation.
         Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code> structs.
         Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity.
         We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
+        <!--
         To accelerate the simulation, we implemented and a hashtable to store a spatial map of <code>Particles</code>.
         The spatial map of <code>Particles</code> divides space into cubes that are \(h\) (where \(h\) is a user-defined parameter) wide.
         Each particle is assigned to a cube, so when we search for a particle's neighbors, which are all the particles within \(h\) distance away, we only search the cube the particle is in and its immediate neighbors. 
+        -->
     </p>
     <!--We implemented the algorithm slightly differently from the paper. We had a temporary velocity that updated at the very end rather than updating velocity then applying
     vort and visc then updating position. idk why we did it that way-->
@@ -162,22 +165,20 @@
         We also add an artifical pressure with a fixed vector \(\Delta \textbf{q}\), and small constants \(k\) and \(n\). 
         \[s_{corr} = -k\left(\frac{W_{poly6}(\textbf{p}_i-\textbf{p}_j,h)}{W_{poly6}(\Delta\textbf{q},h)}\right)^n\]
 
-        We finally calculate \(\Delta \textbf{p}_i\) to enforce incompressibility.
+        To enforce incompressibility, we calculate \(\Delta \textbf{p}_i\) .
         \[\Delta\textbf{p}_i=\frac{1}{\rho_0}\sum_{j}(\lambda_i + \lambda_j + s_{corr})\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\]
     </p>
     
     <h3>Collision Detection and Response</h3>
     <p>
-        <!--Since the paper didn't specify how they implemented collision detection / response, we implemented it from the other collision paper-->
-        Since the paper did not specify how to handle collisions, and thought that the Project 4 method of collision response would not preserve energy well enough, we chose to implement
+        Since the paper did not specify how to handle collisions, and the Project 4 method of collision response seemed to not preserve energy well enough, we implemented
         <a href="https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.1856&rep=rep1&type=pdf" target="_blank" rel="noopener noreferrer">this paper</a>
         for collision response.
         Each plane has a point and a normal vector which defines the side that the particle should always be on.
-        To detect collision we check if the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
-        If collision is detected, we calculate where the particle would've collided with the wall and update the particle's incompressibility constraint \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
+        To detect collision we check if the vector from the wall to the particle is in the opposite direction of the wall's normal vector.
+        If collision is detected, we calculate where the particle collides with the wall and update the particle's \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
         \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} - \left(1 + c_R \frac{d}{\Delta t \|\textbf{v}_i^{temp}\|}\right)(\textbf{v}_i^{temp} \cdot  \textbf{n})\textbf{n}\]
-        If we don't detect a collision, we set the particle's temp velocity to the particle's change in position divided by the time step.
-        \[\textbf{v}_i^{temp} = \left(\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev}\right)/\Delta t\]
+        If we don't detect a collision, we set \(\textbf{v}_i^{temp} = \left(\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev}\right)/\Delta t\)
     </p>
     
     <h3>Viscosity</h3>
@@ -210,10 +211,6 @@
     <code>ParentFluid</code> also has a pointer to the <code>Fluid</code> for the scene, which allows it to access the positions and velocities of all the <code>Particle</code> structs in the scene.
     We implemented <a href="https://cg.informatik.uni-freiburg.de/publications/2012_CGI_sprayFoamBubbles.pdf" target="_blank" rel="noopener noreferrer">this paper</a> to advect and generate diffuse particles.
 </p>
-<!--
-<h3>Pseudocode of Algorithm</h3>
-
--->
 
 <h3>Generation</h3>
 <p>
@@ -331,12 +328,10 @@
 </p>
 <h2 align="middle">Rendering in Blender</h2>
 <p>
-    To import our meshes into blender, we used a third party addon called Stop Motion OBJ. It allowed us to import all of our OBJ files 
-    as a mesh sequence and easily animate them. To make the particle mesh look like water we used a glass BSDF with the same index of 
-    refraction as water and a light blue shading. Because our raw mesh looked too rough for the glass BSDF to work, we implemented a 
-    remeshing modifier that converts our mesh into voxels to smooth it out. To visualize our diffuse particles, we imported them as a .PLY 
+    To import our meshes into blender, we used a third party addon called Stop Motion OBJ to import our OBJ files 
+    as a mesh sequence. To make the particle mesh look like water we used a glass BSDF with the same index of 
+    refraction as water. To visualize our diffuse particles, we imported them as a .PLY 
     file using the same third party addon. This imported them as points, which we converted to a volume then a mesh. 
-    This also looked too bumpy, so we used the remeshing modifier to smooth it out.
 </p>
 
 <div align="middle">
