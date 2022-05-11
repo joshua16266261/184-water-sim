@@ -294,12 +294,12 @@
 <p>
     For mesh generation we implemented the marching cubes algorithm from the
     <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf" target="_blank" rel="noopener noreferrer">marching cubes paper</a>.
-    We subdivided the entire object space into a multitude of smaller marching cubes.
-    Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex's isovalues.
+    We subdivide the entire object space into a multitude of smaller marching cubes.
+    Then for each marching cube, we take the eight corner points, calculate their isovalues with the iso function and use the returned isovalue to decide if a triangle should be rendered at an edge near that vertex or not.
     Then we generate a <code>.obj</code> mesh file containing a list of 3D triangle positions and 3D triangle normal values.
-    For our implementation, we also used a subset of code from
+    For our implementation, we used a subset of code from
     <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">the Polygonize website</a>
-    that provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and determined the 3D positions of the triangles.
+    that provided: the list of all 256 different triangles we can render, a way to generate an index into the triangle list, and the 3D positions of the triangles.
 </p>
 <p>
     As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube).
@@ -312,8 +312,8 @@
 </div>
 <p>
     To make the animation look more visually pleasing, we computed the normals for each triangle and cube vertex, or else the animation would look noticeably triangulated. 
-    And to calculate the normals for each cube vertex, the way we decided to calculate the normal vector of the 3 different planes that each vertex is linked to by computing the vector that goes through the vertex and its diagonal vertex counterpart and making that the normal vector.
-    And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, with the cube vertex normals we previously calculated as the input. 
+    To calculate the normals for each cube vertex, we computed the vector that goes through the vertex and its diagonal vertex counterpart and made that the normal vector.
+    And for the triangle normals we modified the code subset we used to calculate the triangle positions to calculate the triangle normals, with the cube vertex normals as the passed in input. 
 </p>
 <div align="middle">
     <img src="images/normals.png" width="500px"/>
@@ -379,7 +379,7 @@
 
 <h1 align="middle">Lessons Learned</h1>
 <p>
-    The lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
+    The main lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
     The method we used for tuning parameters for the marching cubes algorithm was trial and error, and for tuning the particle physics simulation parameters, we wrote a Jupyter Notebook script that automated the tuning process, along with plotting the results in Matplotlib to visually verify the quality of the output based on our parameters.
     Both methods of parameter tuning still took longer than we expected.
 </p>
