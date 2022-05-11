@@ -159,7 +159,10 @@
 
 <h3>Marching Cubes</h3>
 <p>
-    For mesh generation we implemented the marching cubes algorithm. We subdivided the entire object space into a multitude of smaller marching cubes. Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex’s isovalues. Then we generate a OBJ mesh file containing a list of 3D triangle positions and 3D triangle normal values. For our implementation, we also used a subset of code from this website that: provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and for determining the 3D positions of the triangles.
+    For mesh generation we implemented the marching cubes algorithm from the
+    <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf/" target="_blank" rel="noopener noreferrer">marching cubes paper</a>. We subdivided the entire object space into a multitude of smaller marching cubes. Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex’s isovalues. Then we generate a OBJ mesh file containing a list of 3D triangle positions and 3D triangle normal values. For our implementation, we also used a subset of code from
+    <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">the Polygonize website</a>
+    that: provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and for determining the 3D positions of the triangles.
 </p>
 <p>
     As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube). Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction. The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density. 
