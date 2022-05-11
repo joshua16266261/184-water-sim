@@ -57,16 +57,16 @@
         algorithm using isotropic kernels. Finally we rendered the mesh using Blender's “Cycles” path tracing engine.
     </p>
     <h1 align="middle">Technical Approach</h1>
-
+    <!--
     <div class="row">
         <div class="column">
             <h3>Pseudocode of Fluid Simulation</h3>
             <ol>
                 <li>For all Particles \(i\):</li>
                 <ol type = "a">
-                    <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>
-                    <li>Build spatial map of Particles</li>
+                    <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>   
                 </ol>
+                <li>Build spatial map of Particles</li>
                 <li>For all Particles \(i\):</li>
                 <ol type="a">
                     <li>Calculate neighbors</li>
@@ -102,6 +102,7 @@
                 </ol>
             </ol>
         </div>
+        
         <div class="column">
             <h3>Pseudocode of Difuse Particle Simulation</h3>
             <ol>
@@ -131,16 +132,18 @@
             </ol>
         </div>
     </div>
-    
+    -->
     <h2 align="middle">Position-Based Fluid Simulation</h2>
     <p>
-        To implement our project, we needed to start with a particle based water simulation.
+        To implement our project, we started with a particle based water simulation.
         Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code> structs.
         Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity.
         We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
+        <!--
         To accelerate the simulation, we implemented and a hashtable to store a spatial map of <code>Particles</code>.
         The spatial map of <code>Particles</code> divides space into cubes that are \(h\) (where \(h\) is a user-defined parameter) wide.
         Each particle is assigned to a cube, so when we search for a particle's neighbors, which are all the particles within \(h\) distance away, we only search the cube the particle is in and its immediate neighbors. 
+        -->
     </p>
     <!--We implemented the algorithm slightly differently from the paper. We had a temporary velocity that updated at the very end rather than updating velocity then applying
     vort and visc then updating position. idk why we did it that way-->
@@ -168,22 +171,20 @@
         We also add an artifical pressure with a fixed vector \(\Delta \textbf{q}\), and small constants \(k\) and \(n\). 
         \[s_{corr} = -k\left(\frac{W_{poly6}(\textbf{p}_i-\textbf{p}_j,h)}{W_{poly6}(\Delta\textbf{q},h)}\right)^n\]
 
-        We finally calculate \(\Delta \textbf{p}_i\) to enforce incompressibility.
+        To enforce incompressibility, we calculate \(\Delta \textbf{p}_i\) .
         \[\Delta\textbf{p}_i=\frac{1}{\rho_0}\sum_{j}(\lambda_i + \lambda_j + s_{corr})\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\]
     </p>
     
     <h3>Collision Detection and Response</h3>
     <p>
-        <!--Since the paper didn't specify how they implemented collision detection / response, we implemented it from the other collision paper-->
-        Since the paper did not specify how to handle collisions, and thought that the Project 4 method of collision response would not preserve energy well enough, we chose to implement
+        Since the paper did not specify how to handle collisions, and the Project 4 method of collision response seemed to not preserve energy well enough, we implemented
         <a href="https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.1856&rep=rep1&type=pdf" target="_blank" rel="noopener noreferrer">this paper</a>
         for collision response.
         Each plane has a point and a normal vector which defines the side that the particle should always be on.
-        To detect collision we check if the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
-        If collision is detected, we calculate where the particle would've collided with the wall and update the particle's incompressibility constraint \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
+        To detect collision we check if the vector from the wall to the particle is in the opposite direction of the wall's normal vector.
+        If collision is detected, we calculate where the particle collides with the wall and update the particle's \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
         \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} - \left(1 + c_R \frac{d}{\Delta t \|\textbf{v}_i^{temp}\|}\right)(\textbf{v}_i^{temp} \cdot  \textbf{n})\textbf{n}\]
-        If we don't detect a collision, we set the particle's temp velocity to the particle's change in position divided by the time step.
-        \[\textbf{v}_i^{temp} = \left(\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev}\right)/\Delta t\]
+        If we don't detect a collision, we set \(\textbf{v}_i^{temp} = \left(\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev}\right)/\Delta t\)
     </p>
     
     <h3>Viscosity</h3>
@@ -216,10 +217,6 @@
     <code>ParentFluid</code> also has a pointer to the <code>Fluid</code> for the scene, which allows it to access the positions and velocities of all the <code>Particle</code> structs in the scene.
     We implemented <a href="https://cg.informatik.uni-freiburg.de/publications/2012_CGI_sprayFoamBubbles.pdf" target="_blank" rel="noopener noreferrer">this paper</a> to advect and generate diffuse particles.
 </p>
-<!--
-<h3>Pseudocode of Algorithm</h3>
-
--->
 
 <h3>Generation</h3>
 <p>
@@ -303,12 +300,12 @@
 <p>
     For mesh generation we implemented the marching cubes algorithm from the
     <a href="https://people.eecs.berkeley.edu/~jrs/meshpapers/LorensenCline.pdf" target="_blank" rel="noopener noreferrer">marching cubes paper</a>.
-    We subdivided the entire object space into a multitude of smaller marching cubes.
-    Then for each marching cube, we take its eight corner points, calculate their isovalues with the iso function and decide if it should render a triangle at an edge connecting to that vertex based on the vertex's isovalues.
+    We subdivide the entire object space into a multitude of smaller marching cubes.
+    Then for each marching cube, we take the eight corner points, calculate their isovalues with the iso function and use the returned isovalue to decide if a triangle should be rendered at an edge near that vertex or not.
     Then we generate a <code>.obj</code> mesh file containing a list of 3D triangle positions and 3D triangle normal values.
-    For our implementation, we also used a subset of code from
+    For our implementation, we used a subset of code from
     <a href="http://paulbourke.net/geometry/polygonise/" target="_blank" rel="noopener noreferrer">the Polygonize website</a>
-    that provided the list of all 256 different possible triangles we can render, provided a way to generate an index into the triangle list given a passed in cube, and determined the 3D positions of the triangles.
+    that provided: the list of all 256 different triangles we can render, a way to generate an index into the triangle list, and the 3D positions of the triangles.
 </p>
 <p>
     As part of the mesh generation, we needed to compute the isovalue for each of the voxels (corners of each unit marching cube).
@@ -321,8 +318,8 @@
 </div>
 <p>
     To make the animation look more visually pleasing, we computed the normals for each triangle and cube vertex, or else the animation would look noticeably triangulated. 
-    And to calculate the normals for each cube vertex, the way we decided to calculate the normal vector of the 3 different planes that each vertex is linked to by computing the vector that goes through the vertex and its diagonal vertex counterpart and making that the normal vector.
-    And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, with the cube vertex normals we previously calculated as the input. 
+    To calculate the normals for each cube vertex, we computed the vector that goes through the vertex and its diagonal vertex counterpart and made that the normal vector.
+    And for the triangle normals we modified the code subset we used to calculate the triangle positions to calculate the triangle normals, with the cube vertex normals as the passed in input. 
 </p>
 <div align="middle">
     <img src="images/normals.png" width="500px"/>
@@ -337,12 +334,10 @@
 </p>
 <h2 align="middle">Rendering in Blender</h2>
 <p>
-    To import our meshes into blender, we used a third party addon called Stop Motion OBJ. It allowed us to import all of our OBJ files 
-    as a mesh sequence and easily animate them. To make the particle mesh look like water we used a glass BSDF with the same index of 
-    refraction as water and a light blue shading. Because our raw mesh looked too rough for the glass BSDF to work, we implemented a 
-    remeshing modifier that converts our mesh into voxels to smooth it out. To visualize our diffuse particles, we imported them as a .PLY 
+    To import our meshes into blender, we used a third party addon called Stop Motion OBJ to import our OBJ files 
+    as a mesh sequence. To make the particle mesh look like water we used a glass BSDF with the same index of 
+    refraction as water. To visualize our diffuse particles, we imported them as a .PLY 
     file using the same third party addon. This imported them as points, which we converted to a volume then a mesh. 
-    This also looked too bumpy, so we used the remeshing modifier to smooth it out.
 </p>
 
 <div align="middle">
@@ -390,7 +385,7 @@
 
 <h1 align="middle">Lessons Learned</h1>
 <p>
-    The lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
+    The main lesson we learned was that tuning parameters is a very important and time consuming process that directly determines the quality of the final output no matter how good the code is.
     The method we used for tuning parameters for the marching cubes algorithm was trial and error, and for tuning the particle physics simulation parameters, we wrote a Jupyter Notebook script that automated the tuning process, along with plotting the results in Matplotlib to visually verify the quality of the output based on our parameters.
     Both methods of parameter tuning still took longer than we expected.
 </p>
