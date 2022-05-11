@@ -46,6 +46,8 @@
         To implement our project, we needed to start with a particle based water simulation. Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code>
         structs. Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity. We also have a <code>CollisionObject</code> and <code>Plane</code> struct 
         that are passed into the <code>Fluid</code> struct which we use to contain and move the <code>Particles</code>. We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
+        To accelerate the simulation, we implemented parallelism and a hashtable to store a spatial map of <code>Particles</code>. The spatial map of <code>Particles</code> divides space into cubes that are 2h (where h is a hyperparameter) wide.
+        Each particle is assigned to a cube, so when we search for a particle's neighbors, we only search the cube the particle is in and its immediate neighbors. 
     </p>
     
     <h3>Pseudocode of Algorithm</h3>
