@@ -2,6 +2,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <style>
+    /* Set additional styling options for the columns*/
+    .column {
+    float: left;
+    width: 50%;
+    }
+
+    .row:after {
+    content: "";
+    display: table;
+    clear: both;
+    }
   body {
     padding: 100px;
     width: 1000px;
@@ -37,107 +48,147 @@
         in creating a more realistic fluid simulation by also implementing water-air interactions like bubbles, spray, and foam. To do so, we implemented 
         Position Based Fluids by Macklin and Müller for the underlying fluid simulation and Unified Spray, Foam and Bubbles for Particle-Based Fluids 
         by Ihmsen et al. to simulate water-air interactions. To convert our fluid and water-air particles into a mesh we implemented the marching cubes 
-        algorithm using isotropic kernels. Finally we rendered the mesh using Blender’s “Cycles” path tracing engine.
+        algorithm using isotropic kernels. Finally we rendered the mesh using Blender's “Cycles” path tracing engine.
     </p>
     <h1 align="middle">Technical Approach</h1>
+
+    <div class="row">
+        <div class="column">
+            <h3>Pseudocode of Fluid Simulation</h3>
+            <ol>
+                <li>For all Particles \(i\):</li>
+                <ol type = "a">
+                    <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>
+                    <li>Build spatial map of Particles</li>
+                </ol>
+                <li>For all Particles \(i\):</li>
+                <ol type="a">
+                    <li>Calculate neighbors</li>
+                </ol>
+                <li>While iterations < SolverIterations:</li>
+                <ol type="a">
+                    <li>For all Particles \(i\):</li>
+                    <ol type = "i">
+                        <li>Calculate \(\lambda_i\)</li>
+                    </ol>
+                    <li>For all Particles \(i\):</li>
+                    <ol type = "i">
+                        <li>Calculate \(\Delta \textbf{p}_i\)</li>
+                        <li>Handle collisions</li>
+                    </ol>
+                    <li>For all Particles \(i\):</li>
+                    <ol type = "i">
+                        <li>Update position \(\pmb{x_i^*} \Leftarrow \pmb{x_i^*} + \Delta \textbf{p}_{i}\)</li>
+                    </ol>
+                </ol>
+                <li>For all Particles \(i\):</li>
+                <ol type = "i">
+                    <li>Calculate and store viscosity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{visc}\)</li>
+                    <li>Calculate \(\omega_i\) </li>
+                </ol>
+                <li>For all Particles \(i\):</li>
+                <ol type = "i">
+                    <li>Calculate and store vorticity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{vort}\)</li>
+                </ol>
+                <li>For all Particles \(i\):</li>
+                <ol type = "i">
+                    <li>Update velocity \(\textbf{v}_{i}\Leftarrow \textbf{v}_{i}^{temp}\)</li>
+                </ol>
+            </ol>
+        </div>
+        <div class="column">
+            <h3>Pseudocode of Difuse Particle Simulation</h3>
+            <ol>
+                <li>Build spatial map of fluid particles with grid width \(2h\)</li>
+                <li>For all foam particles \(i\):</li>
+                <ol type="a">
+                    <li>If time to live of \(i\) \(\leq 0\): erase \(i\)</li>
+                    <li>Else: decrement time to live of \(i\) by \(\Delta t\)</li>
+                </ol>
+                <li>For all diffuse particles:</li>
+                <ol type="a">
+                    <li>Perform advection and collision detection/response</li>
+                </ol>
+                <li>Build spatial map of fluid particles with grid width \(h\)</li>
+                <li>For all fluid particles \(i\):</li>
+                <ol type="a">
+                    <li>Calculate \(\rho_i\) (as defined in <b>Position-Based Fluid Simulation</b>)</li>
+                </ol>
+                <li>For all fluid particles \(i\):</li>
+                <ol type="a">
+                    <li>Calculate the surface normal vector \(\pmb{n}_i\) (as given by <a href="https://matthias-research.github.io/pages/publications/sca03.pdf" target="_blank" rel="noopener noreferrer">this paper</a>)</li>
+                </ol>
+                <li>For all fluid particles:</li>
+                <ol type="a">
+                    <li>Calculate \(n_d\) and generate diffuse particles</li>
+                </ol>
+            </ol>
+        </div>
+    </div>
     
     <h2 align="middle">Position-Based Fluid Simulation</h2>
     <p>
         To implement our project, we needed to start with a particle based water simulation. Our code has a <code>Fluid</code> struct, which handles all of the <code>Particle</code>
         structs. Each <code>Particle</code> struct has a list of their neighbors along with the current and previous position and velocity. We also have a <code>CollisionObject</code> and <code>Plane</code> struct 
         that are passed into the <code>Fluid</code> struct which we use to contain and move the <code>Particles</code>. We use Euler's method along with incompressibility, collision, viscosity and vorticity constraints to update our <code>Particle</code> positions at each time step.
-        To accelerate the simulation, we implemented parallelism and a hashtable to store a spatial map of <code>Particles</code>. The spatial map of <code>Particles</code> divides space into cubes that are 2h (where h is a hyperparameter) wide.
-        Each particle is assigned to a cube, so when we search for a particle's neighbors, we only search the cube the particle is in and its immediate neighbors. 
+        To accelerate the simulation, we implemented parallelism and a hashtable to store a spatial map of <code>Particles</code>. The spatial map of <code>Particles</code> divides space into cubes that are \(h\) (where \(h\) is a user-defined parameter) wide.
+        Each particle is assigned to a cube, so when we search for a particle's neighbors, which are all the particles within \(h\) distance away, we only search the cube the particle is in and its immediate neighbors. 
     </p>
+    <!--We implemented the algorithm slightly differently from the paper. We had a temporary velocity that updated at the very end rather than updating velocity then applying
+    vort and visc then updating position. idk why we did it that way-->
     
-    <h3>Pseudocode of Algorithm</h3>
-    <ol>
-        <li>For all Particles i:</li>
-        <ol type = "a">
-            <li>Apply external forces \(\textbf{v}_i\Leftarrow \textbf{v}_i+\Delta t \textbf{f}_{ext}\)</li>
-            <li>Build spatial map of Particles</li>
-        </ol>
-        <li>For all Particles i:</li>
-        <ol type="a">
-            <li>Calculate neighbors (all particles within a distance h)</li>
-        </ol>
-        <li>While iterations < SolverIterations:</li>
-        <ol type="a">
-            <li>For all Particles i:</li>
-            <ol type = "i">
-                <li>Calculate \(\lambda_i\) (as in Eq 11 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
-            </ol>
-            <li>For all Particles i:</li>
-            <ol type = "i">
-                <li>Calculate \(\Delta \textbf{p}_i\) (as in Eq 14 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
-                <li>Handle collisions</li>
-            </ol>
-            <li>For all Particles i:</li>
-            <ol type = "i">
-                <li>Update position \(\textbf{x}_i^{\textbf{*}}\Leftarrow \textbf{x}_i^{\textbf{*}}+\Delta \textbf{p}_{i}\)</li>
-            </ol>
-        </ol>
-        <li>For all Particles i:</li>
-        <ol type = "i">
-            <li>Calculate and store viscosity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{visc}\)</li>
-            <li>Calculate \(\omega_i\) (as in Eq. 15 of <a href="http://mmacklin.com/pbf_sig_preprint.pdf" target="_blank" rel="noopener noreferrer">Position Based Fluids</a> )</li>
-        </ol>
-        <li>For all Particles i:</li>
-        <ol type = "i">
-            <li>Calculate and store vorticity \(\textbf{v}_{i}^{temp}\Leftarrow \textbf{v}_{i}^{temp}+\textbf{v}_{i}^{vort}\)</li>
-        </ol>
-        <li>For all Particles i:</li>
-        <ol type = "i">
-            <li>Update velocity \(\textbf{v}_{i}\Leftarrow \textbf{v}_{i}^{temp}\)</li>
-        </ol>
-    </ol>
     
     <h3>Incompressibility</h3>
     <p>
         The incompressibility constraint applies a small change in position \(\Delta \textbf{p}_i\) to keep the volume of the fluid constant. We start by utilizing the Poly6 Kernel
-        \[W(r, h) = \begin{cases} (h^2 - r^2)^3 & 0 \leq r \leq h \\ 0 & otherwise, \end{cases}\]
+        \[W_{poly6} (\|r\|, h) = \begin{cases} (h^2 - \|r\|^2)^3 & 0 \leq \|r\| \leq h \\ 0 & otherwise, \end{cases}\]
 
-        to estimate the density of each particle \(\rho_i = \sum_jm_jW(\textbf{p}_i-\textbf{p}_j, \ h)\).
+        to estimate the density of each particle \(\rho_i = \sum_j m_j W_{poly6} (\textbf{p}_i-\textbf{p}_j, \ h)\).
         
-
         We use the particle density \(\rho_i\) and fluid's rest density \(\rho_0\) to calculate a density constraint \(C_i\) 
         \[C_i =\frac{\rho_i}{\rho_0}-1\]
 
-        We also calculate the gradient of the constraint function \(\nabla_{\textbf{p}_k}C_i\)
-        \[\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0}\begin{cases} \sum_{j}\nabla_{\textbf{p}_k}W(\textbf{p}_i-\textbf{p}_j,h) & if \ \  k = i \\\\-\nabla_{\textbf{p}_k}W(\textbf{p}_i-\textbf{p}_j,h) & if \ \ k = j \end{cases}\]
-       
-        To calculate a scaling factor \(\lambda_i\) with \(\varepsilon\) as a relaxation hyperparameter.<br>
-        \[\lambda_i = -\frac{C_i(\textbf{p}_1,...,\textbf{p}_n)} {\sum_k|\nabla_{\textbf{p}_k}C_i|^2+\varepsilon}\]
+        We also use the gradient of the Spiky Kernel
+        \[\nabla W_{spiky}(\textbf{r},h) = -\textbf{r} \frac{45}{\pi h^6 \|\pmb{r}\|}(h- \|\pmb{r}\|)^2\]
 
-        We also add an artifical pressure with a fixed distance \(\Delta \textbf{q}\), and small constants k and n. 
-        \[s_{corr} = -k\left(\frac{W(\textbf{p}_i-\textbf{p}_j,h)}{W(\Delta\textbf{q},h)}\right)^n\]
+        After doing some algebraic manipulation, we derived an equivalent expression which was easier to implement in code to what is presented in the paper for calculating the gradient of the constraint function \(\nabla_{\textbf{p}_k}C_i\)
+        \[\nabla_{\textbf{p}_k}C_i = \frac{1}{\rho_0} \left(\left\|\sum_j\nabla_{spiky} W(\textbf{p}_i-\textbf{p}_j, h)\right\|^2 +\sum_j\|\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\|^2 \right)\]
+        
+        which is used to calculate a scaling factor \(\lambda_i\) with \(\epsilon\) as a relaxation hyperparameter.<br>
+        \[\lambda_i = -\frac{C_i(\textbf{p}_1, \ldots ,\textbf{p}_n)} {\sum_k|\nabla_{\textbf{p}_k}C_i|^2+\epsilon}\]
+
+        We also add an artifical pressure with a fixed vector \(\Delta \textbf{q}\), and small constants \(k\) and \(n\). 
+        \[s_{corr} = -k\left(\frac{W_{poly6}(\textbf{p}_i-\textbf{p}_j,h)}{W_{poly6}(\Delta\textbf{q},h)}\right)^n\]
 
         We finally calculate \(\Delta \textbf{p}_i\) to enforce incompressibility.
-        \[\Delta\textbf{p}_i=\frac{1}{\rho_0}\sum_{j}(\lambda_i + \lambda_j + s_{corr})\nabla W (\textbf{p}_i-\textbf{p}_j, h)\]
+        \[\Delta\textbf{p}_i=\frac{1}{\rho_0}\sum_{j}(\lambda_i + \lambda_j + s_{corr})\nabla W_{spiky} (\textbf{p}_i-\textbf{p}_j, h)\]
     </p>
     
     <h3>Collision Detection and Response</h3>
     <p>
-        Each wall has a point on its plane and a normal vector assigned which defines which side a particle would collide with. To detect collision we check that the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
+        <!--Since the paper didn't specify how they implemented collision detection / response, we implemented it from the other collision paper-->
+        Each plane has a point and a normal vector which defines the side that the particle should always be on.
+        To detect collision we check if the vector from the point on the wall to the particle's next position is in the opposite direction of the wall's normal vector.
         If collision is detected, we calculate where the particle would've collided with the wall and update the particle's incompressibility constraint \(\Delta \textbf{p}_i\) to move the particle to that point. We then reflect the particle's velocity along the wall's normal.
-        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} - (1 + c_R \frac{d}{\Delta t |\textbf{v}_i^{temp}|})(\textbf{v}_i^{temp} \cdot  \textbf{n})\textbf{n}\]
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} - \left(1 + c_R \frac{d}{\Delta t \|\textbf{v}_i^{temp}\|}\right)(\textbf{v}_i^{temp} \cdot  \textbf{n})\textbf{n}\]
         If we don't detect a collision, we set the particle's temp velocity to the particle's change in position divided by the time step.
-        \[\textbf{v}_i^{temp} = (\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev})/\Delta t\]
+        \[\textbf{v}_i^{temp} = \left(\textbf{x}_i^{*}+\Delta\textbf{p} - \textbf{x}_i^{prev}\right)/\Delta t\]
     </p>
     
     <h3>Viscosity</h3>
     <p>
-        Viscosity is a fluid's tendency to resist a change in flow. To implement viscosity we add an artificial viscosity calculation with a small constant c to our particle's temp velocity.
-        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + c\sum_j\textbf{v}_{ij}W(\textbf{p}_i-\textbf{p}_j,h)\]
+        Viscosity is a fluid's tendency to resist a change in flow. To implement viscosity we add an artificial viscosity calculation with a small constant \(c\) to \(\textbf{v}_i^{temp}\).
+        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + c\sum_j\textbf{v}_{ij} W_{poly6} (\textbf{p}_i-\textbf{p}_j,h)\]
     </p>
     
     <h3>Vorticity</h3>
     <p>
         Vorticity is the tendency of a fluid to rotate as it moves along its path. To implement vorticity we calculate a vorticity estimator
-        \(\omega_i = \nabla \times \textbf{v} = \sum_j(\textbf{v}_{j}-\textbf{v}_{i}) \times \nabla_{\textbf{p}_j}W(\textbf{p}_i-\textbf{p}_j,h)\).
+        \(\omega_i = \nabla \times \textbf{v} = \sum_j(\textbf{v}_{j} - \textbf{v}_{i}) \times \nabla_{\textbf{p}_j} W_{spiky} (\textbf{p}_i-\textbf{p}_j,h)\).
         We then calculate and apply a corrective velocity to our particle.
-        \[\textbf{v}_i^{temp} = \textbf{v}_i^{temp} + \varepsilon(\frac{\nabla|\omega|_i}{|\nabla|\omega|_i|}\times\omega_i)\]
         
+        \textbf{v}_i^{temp} = \textbf{v}_i^{temp} + \varepsilon (\sum_j \left(\frac{|\omega_j|-|\omega_i|}{\textbf{p}_j - \textbf{p}_i} \right)\times \omega_i)\Delta t 
+        where \(\varepsilon\) is a separate vorticity parameter (not to be confused with the relaxation parameter \(\epsilon\) used in enforcing incompressibility).
     </p>
 
 <div align="middle">
@@ -154,31 +205,7 @@
 </p>
 <!--
 <h3>Pseudocode of Algorithm</h3>
-<ol>
-    <li>Build spatial map of fluid particles with grid width $2h$</li>
-    <li>For all foam particles $i$:</li>
-    <ol type="a">
-        <li>If time to live of $i$ $\leq 0$: erase $i$</li>
-        <li>Else: decrement time to live of $i$ by $\Delta t$</li>
-    </ol>
-    <li>For all diffuse particles:</li>
-    <ol type="a">
-        <li>Perform advection and collision detection/response</li>
-    </ol>
-    <li>Build spatial map of fluid particles with grid width $h$</li>
-    <li>For all fluid particles $i$:</li>
-    <ol type="a">
-        <li>Calculate $\rho_i$ (as defined in <b>Position-Based Fluid Simulation</b>)</li>
-    </ol>
-    <li>For all fluid particles $i$:</li>
-    <ol type="a">
-        <li>Calculate the surface normal vector $\pmb{n}_i$ (as given by <a href="https://matthias-research.github.io/pages/publications/sca03.pdf" target="_blank" rel="noopener noreferrer">this paper</a>)</li>
-    </ol>
-    <li>For all fluid particles:</li>
-    <ol type="a">
-        <li>Calculate $n_d$ and generate diffuse particles</li>
-    </ol>
-</ol>
+
 -->
 
 <h3>Generation</h3>
@@ -211,7 +238,7 @@
     \[n_d = I_k (k_{ta} I_{ta} + k_{wc} I_{wc}) \Delta t\]
     gives us the number of diffuse particles that fluid particle \(i\) generates.
     To create the generated diffuse particles, we need two vectors \(\pmb{e}_1'\) and \(\pmb{e}_2'\) which are orthogonal to \(\pmb{v}_i\).
-    To achieve this, we decided to use Gram-Schmidt to get \(\pmb{e}_1'\) by orthogonalizing one of the standard unit basis vectors with \(\pmb{v}_i\), and then taking \(\pmb{e}_2' = \pmb{e}_1' \times \pmb{v}_i\).
+    Because the paper did not specify what \(\pmb{e}_1'\) and \(\pmb{e}_2'\) to use, we decided to use Gram-Schmidt to get \(\pmb{e}_1'\) by orthogonalizing one of the standard unit basis vectors with \(\pmb{v}_i\), and then taking \(\pmb{e}_2' = \pmb{e}_1' \times \pmb{v}_i\).
     We then consider a cylinder with radius equal to the radius of the fluid particle (which we always take to be \(1/10\)), height \(\| \Delta t \pmb{v}_i \|\), and base spanned by \(\pmb{e}_1'\) and \(\pmb{e}_2'\).
     We then place diffuse particles uniformly in that cylinder offset by the fluid particle's position, and we initialize the velocity of the diffuse particle to be \(r \cos \theta \pmb{e}_i' + r \sin \theta \pmb{e}_2' + \pmb{v}_i\), where \(r, \theta\) are the typical cylindrical coordinates.
 </p>
@@ -276,14 +303,17 @@
     Here, we decided to use the density calculation, similar to the one described in fluid-particle generation, to be the isofunction.
     The isovalue of each voxel is computed by running the isofunction on all the particles within a specific search radius and summing up all the corresponding density. 
 </p>
-<p>
-    For making the animation look more visually pleasing, we computed the normals for each triangle and cube vertex.
-    And to calculate the normals for each cube vertice, we had to calculate the normal vector of 3 different planes so we computed the vector that goes through a vertex and its diagonal vertex counterpart as the normal vector.
-    And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, but with the cube vertex normals we previously calculated as the input.  
-</p>
 <div align="middle">
     <img src="images/marching.png"/>
     <figcaption align="middle">Unique corner configurations and their corresponding triangles</figcaption>
+</div>
+<p>
+    To make the animation look more visually pleasing, we computed the normals for each triangle and cube vertex, or else the animation would look noticeably triangulated. 
+    And to calculate the normals for each cube vertex, the way we decided to calculate the normal vector of the 3 different planes that each vertex is linked to by computing the vector that goes through the vertex and its diagonal vertex counterpart and making that the normal vector.
+    And for the triangle normals we modified the code subset that we used to calculate the triangle positions to calculate the triangle normals, with the cube vertex normals we previously calculated as the input. 
+</p>
+<div align="middle">
+    <img src="images/normals.png" width="500px"/>
 </div>
 
 <h3>Converting to .obj Files</h3>
@@ -311,7 +341,7 @@
 <h1 align="middle">Problems Encountered</h1>
 <h2 align="middle">Tuning Parameters</h2>
 <p>
-    When we were tuning parameters, we noticed that the denser the particles in our box are the better the resulting mesh.
+    We wanted to simulate the fluid with a large number of particles to improve the accuracy of the simulation.
     In order to achieve this high density, we tried to pack a large number of particles in a small box.
     However, when we tried generating a small box we were having issues with the particles getting launched upwards.
     We decided to resolve this problem by using a fixed particle density with a larger box and then scaling down the positions of each particle after simulating.
@@ -323,6 +353,7 @@
 </div>
 
 <h2 align="middle">Speeding up Marching Cubes</h2>
+<!-- Re-word to talk baout using the same hash table as particle-sim -->
 <h3>Implementing a hashtable for particle neighborhood searching</h3>
 <p>
     To run the marching cubes algorithm, we need to find all the particles within a certain distance from each voxel.
@@ -332,12 +363,6 @@
     To find the particles within a radius, we look through all the neighboring boxes to the voxel's hashed box.
     The smaller we make our box hash, the faster our algorithm would run since we are reducing the search space.
     However, we needed to make sure that our box hash size is less than our search radius to not skip over any particles.
-</p>
-<h3>Writing to disk to save memory</h3>
-<p>
-    Another issue that we encountered when performing marching cubes with many cubes is that our program would run out of memory.
-    To solve this, every 100,000 cubes that we iterate through, we write all the results to files and then clear the vector that stores the triangles.
-    Finally, at the end, we combine the files into a single <code>.obj</code> file.
 </p>
 
 <h3>Storing previously calculated isovalues</h3>
